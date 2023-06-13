@@ -9,7 +9,7 @@
  "engine": "InnoDB",
  "field_order": [
   "version",
-  "subscription_plan",
+  "item",
   "column_break_qv7ij",
   "disabled",
   "file",
@@ -60,17 +60,17 @@
    "reqd": 1
   },
   {
-   "fieldname": "subscription_plan",
+   "fieldname": "item",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Subscription Plan",
-   "options": "Subscription Plan",
+   "label": "Item",
+   "options": "Item",
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-06-07 18:18:03.569744",
+ "modified": "2023-06-13 08:41:43.283663",
  "modified_by": "Administrator",
  "module": "Digital Subscriptions",
  "name": "File Version",

@@ -1,0 +1,27 @@
+{% extends "templates/web.html" %}
+{% block title %}{{ _('Download List') }}{% endblock %}
+
+{% block head_include %}
+{% endblock %}
+
+{% block script %}
+{% endblock %}
+
+{% block page_content %}
+<div class="page-header-wrapper">
+	<div class="page-header">
+	    <h3 class="my-account-header">{{ item.item_name }}</h3>
+	</div>
+</div>
+		
+<div class="web-list-item transaction-list-item">
+    {% for doc in docs %}
+        <div class="row align-items-center alert alert-secondary">
+            <div class="col-sm-4 "><b>{{ doc.version }}</b></div>
+            <div class="col-sm-4 "><b>Description:</b> {{ doc.description }}</div>
+            <a class="transaction-item-link" href='{{ doc.file }}'>Link</a>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

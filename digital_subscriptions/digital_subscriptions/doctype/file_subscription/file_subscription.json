@@ -67,9 +67,8 @@
    "reqd": 1
   }
  ],
- "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-06-06 15:42:11.515443",
+ "modified": "2023-06-13 08:33:54.159966",
  "modified_by": "Administrator",
  "module": "Digital Subscriptions",
  "name": "File Subscription",
@@ -90,6 +89,7 @@
   }
  ],
  "quick_entry": 1,
+ "route": "download",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
