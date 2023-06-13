@@ -102,6 +102,12 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
+doc_events = {
+    "Payment Request": {
+        "on_payment_authorized": "digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.create_file_subscription"
+    }
+}
+
 # doc_events = {
 #	"*": {
 #		"on_update": "method",
