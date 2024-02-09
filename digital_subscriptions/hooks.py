@@ -15,7 +15,7 @@ app_license = "MIT"
 # app_include_js = "/assets/digital_subscriptions/js/digital_subscriptions.js"
 
 # include js, css files in header of web template
-# web_include_css = "/assets/digital_subscriptions/css/digital_subscriptions.css"
+web_include_css = "digital_subscriptions.bundle.css"
 # web_include_js = "/assets/digital_subscriptions/js/digital_subscriptions.js"
 
 # include custom scss in every website theme (without file extension ".scss")

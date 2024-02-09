@@ -5,16 +5,32 @@
 {% endblock %}
 
 {% block page_content %}
-<div class="web-list-item transaction-list-item">
-    {% for doc in docs %}
-    <div class="card bg-light mb-3">
-        <div class="card-header">Version {{ doc.version }}</div>
-        <div class="card-body">
-            {{ doc.description }}
-        </div>
-        <a class="transaction-item-link" href='{{ doc.file }}'>Link</a>
+<p class="text-muted small">
+    Lines starting with # (hash) indicate bug fixes<br>
+    Lines starting with + (plus) indicate added features<br>
+    Lines starting with - (dash) indicate removed features<br>
+    Lines starting with ~ (tilde) indicate miscellaneous changes<br>
+    All other lines are comments and/or notes
+</p>
+
+<div class="row no-gutters">
+{% for doc in docs %}
+<div class="col-sm-12 col-md-5 card border ml-auto mb-4">
+    <div class="card-header">
+        Version {{ doc.version }}
     </div>
-    {% endfor %}
+    <div class="card-body">
+        <h5 class="card-title">Requirements</h5>
+        <p class="card-text">{{ doc.requirements }}</p>
+        <h5 class="card-title">Changelog</h5>
+        <p class="card-text">{{ doc.changelog }}</p>
+        <a href="#" class="btn btn-primary">Click to download</a>
+    </div>
+    <div class="card-footer text-muted">
+        Release Date: {{ frappe.utils.formatdate(doc.release_date, "dd-MM-yyyy") }}
+    </div>
+</div>
+{% endfor %}
 </div>
 
 {% endblock %}

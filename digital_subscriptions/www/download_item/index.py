@@ -18,7 +18,7 @@ def get_context(context):
 		versions = frappe.get_all(
 				"File Version",
 				filters={"item": context.item.name, "disabled": 0},
-				fields=["version", "file", "description"]
+				fields=["version", "file", "changelog", "requirements", "release_type", "release_date"],
 			)
 			
 		context.docs = versions
@@ -32,3 +32,11 @@ def is_file_shared(docname):
     )
 
     return len(shares) > 0
+
+@frappe.whitelist(allow_guest=False)
+def download_file():
+	name = frappe.form_dict.name
+	file = frappe.get_doc("File", name)
+	if not is_file_shared(name):
+		frappe.throw(_("Not allowed"))
+	return get_file_content(file.file_url)

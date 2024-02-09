@@ -14,8 +14,12 @@
   "disabled",
   "file",
   "section_break_uojuq",
-  "description",
-  "naming_series"
+  "release_type",
+  "requirements",
+  "naming_series",
+  "column_break_ymyn",
+  "release_date",
+  "changelog"
  ],
  "fields": [
   {
@@ -47,11 +51,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "description",
-   "fieldtype": "Text Editor",
-   "label": "Description"
-  },
-  {
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -66,11 +65,39 @@
    "label": "Item",
    "options": "Item",
    "reqd": 1
+  },
+  {
+   "default": "Stable Release",
+   "fieldname": "release_type",
+   "fieldtype": "Select",
+   "label": "Release Type",
+   "options": "Stable Release\nBeta",
+   "reqd": 1
+  },
+  {
+   "fieldname": "release_date",
+   "fieldtype": "Date",
+   "label": "Release Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ymyn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "changelog",
+   "fieldtype": "Text Editor",
+   "label": "Changelog"
+  },
+  {
+   "fieldname": "requirements",
+   "fieldtype": "Text Editor",
+   "label": "Requirements"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-06-13 09:46:42.229398",
+ "modified": "2024-02-09 08:20:15.718310",
  "modified_by": "Administrator",
  "module": "Digital Subscriptions",
  "name": "File Version",
