@@ -19,7 +19,7 @@
             <p class="card-text">{{ doc.requirements }}</p>
             <h5 class="card-title">Changelog</h5>
             <p class="card-text">{{ doc.changelog }}</p>
-            <a href="#" class="btn btn-primary file-button" data-version="{{doc.name}}" data-subscription="{{subscription.name}}">{{ _("Download") }}</a>
+            <a href="/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={{subscription.name}}&version={{doc.name}}" class="btn btn-primary file-button">{{ _("Download") }}</a>
         </div>
         <div class="card-footer text-muted">
             Release Date: {{ frappe.utils.formatdate(doc.release_date, "dd-MM-yyyy") }}
