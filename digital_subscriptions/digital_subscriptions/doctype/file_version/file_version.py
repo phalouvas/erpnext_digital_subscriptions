@@ -8,6 +8,7 @@ from werkzeug.wrappers import Response
 from werkzeug.wsgi import wrap_file
 from urllib.parse import quote
 import mimetypes
+import datetime
 
 from frappe.model.document import Document
 
@@ -23,6 +24,9 @@ def download():
     if not subscription:
         frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
     subscription = frappe.get_doc("File Subscription", subscription)
+    if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
+          frappe.throw("Not allowed", frappe.PermissionError)
+            
     # get customer user
     customer = frappe.get_doc("Customer", subscription.customer)
     is_allowed = False
