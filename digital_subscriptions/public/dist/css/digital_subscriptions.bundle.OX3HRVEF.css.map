@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "sources": ["../../../../../../../../tmp/tmp-73251-BzBrLJp0JVMR/digital_subscriptions/digital_subscriptions/public/scss/digital_subscriptions.bundle.css"],
+  "sources": ["../../../../../../../../tmp/tmp-92639-RhVlRB5hW6Iz/digital_subscriptions/digital_subscriptions/public/scss/digital_subscriptions.bundle.css"],
   "sourcesContent": [".download_list:hover {\n  background-color: #f5f5f5;\n  cursor: pointer;\n  transition: background-color 0.3s ease;\n}"],
   "mappings": ";AAAA;AACE;AACA;AACA;AAAA;",
   "names": []
