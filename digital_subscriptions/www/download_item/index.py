@@ -8,8 +8,8 @@ sitemap = 1
 def get_context(context):
 	name = frappe.form_dict.name
 	context.subscription = frappe.get_doc("File Subscription", name)
-	if context.subscription.ends_on < datetime.datetime.now():
-		frappe.throw("Not allowed")
+	if context.subscription.ends_on < datetime.datetime.now() or context.subscription.disabled:
+		frappe.throw("Not allowed", frappe.PermissionError)
 	context.item = frappe.get_doc("Item", context.subscription.item)
 	context.title = context.item.item_name
 
