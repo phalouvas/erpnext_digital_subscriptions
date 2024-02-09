@@ -24,6 +24,9 @@ def get_context(context):
 			
 		context.docs = versions
 
+	context.no_cache = 0
+	context.parents = [{"name": _("Home"), "route": "/"}, {"name": _("Download List"), "route": "/download_list"}]
+
 def is_file_shared(docname):
     # Query the DocShare table to check if the document is shared with the user
     shares = frappe.get_all(

@@ -14,3 +14,5 @@ def get_context(context):
 		)
 
 	context.docs = subscriptions
+	context.no_cache = 0
+	context.show_sidebar = True

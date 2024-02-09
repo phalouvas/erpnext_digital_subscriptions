@@ -7,7 +7,7 @@
 {% block page_content %}
 <div class="row no-gutters">
     {% for doc in docs %}
-    <div class="col-sm-12 col-md-5 card border ml-auto mb-4">
+    <div class="col-sm-12 col-md-5 card border shadow ml-auto mb-4">
         <div class="card-header">
             {% if doc.release_type == "Beta" %}
             <span class="badge badge-warning">{{ doc.release_type }}</span>
@@ -22,7 +22,7 @@
             <a href="/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={{subscription.name}}&version={{doc.name}}" class="btn btn-primary file-button">{{ _("Download") }}</a>
         </div>
         <div class="card-footer text-muted">
-            Release Date: {{ frappe.utils.formatdate(doc.release_date, "dd-MM-yyyy") }}
+            Release Date: {{ frappe.utils.formatdate(doc.release_date, "dd-MMM-yyyy") }}
         </div>
     </div>
     {% endfor %}
