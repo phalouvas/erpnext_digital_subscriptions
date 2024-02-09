@@ -1,0 +1,22 @@
+{
+ "button_gradients": 0,
+ "button_rounded_corners": 1,
+ "button_shadows": 0,
+ "creation": "2024-02-09 18:11:11.526741",
+ "custom": 0,
+ "docstatus": 0,
+ "doctype": "Website Theme",
+ "font_properties": "wght@300;400;500;600;700;800",
+ "google_font": "Roboto",
+ "idx": 0,
+ "ignored_apps": [],
+ "js": "$(document).ready(function() {\n    // Check if the 'gdprAccepted' cookie is not set\n    if (!getCookie('gdprAccepted')) {\n        // Show the GDPR banner\n        $('#gdpr-banner').show();\n    }\n\n    // When the accept button is clicked\n    $('#accept-gdpr').click(function() {\n        // Set the 'gdprAccepted' cookie to 'true'\n        setCookie('gdprAccepted', 'true', 365);\n\n        // Hide the GDPR banner\n        $('#gdpr-banner').hide();\n    });\n});\n\n// Function to get a cookie\nfunction getCookie(cname) {\n    var name = cname + \"=\";\n    var decodedCookie = decodeURIComponent(document.cookie);\n    var ca = decodedCookie.split(';');\n    for(var i = 0; i <ca.length; i++) {\n        var c = ca[i];\n        while (c.charAt(0) == ' ') {\n            c = c.substring(1);\n        }\n        if (c.indexOf(name) == 0) {\n            return c.substring(name.length, c.length);\n        }\n    }\n    return \"\";\n}\n\n// Function to set a cookie\nfunction setCookie(cname, cvalue, exdays) {\n    var d = new Date();\n    d.setTime(d.getTime() + (exdays*24*60*60*1000));\n    var expires = \"expires=\"+ d.toUTCString();\n    document.cookie = cname + \"=\" + cvalue + \";\" + expires + \";path=/\";\n}",
+ "modified": "2024-02-09 18:16:38.676062",
+ "modified_by": "Administrator",
+ "module": "Digital Subscriptions",
+ "name": "Digital Subscriptions",
+ "owner": "Administrator",
+ "theme": "Digital Subscriptions",
+ "theme_scss": "\n@import url(\"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;800&display=swap\");\n// backward compatibility. deprecated in v15\n$font-family-sans-serif: \"Roboto\", \"InterVariable\", \"Inter\", -apple-system, BlinkMacSystemFont,\n\t\"Segoe UI\", \"Roboto\", \"Oxygen\", \"Ubuntu\", \"Cantarell\", \"Fira Sans\",\n\t\"Droid Sans\", \"Helvetica Neue\", sans-serif;\n\n// override font stack if custom font is set in website theme\n:root {\n\t--font-stack: \"Roboto\", \"InterVariable\", \"Inter\", -apple-system, BlinkMacSystemFont,\n\t\"Segoe UI\", \"Roboto\", \"Oxygen\", \"Ubuntu\", \"Cantarell\", \"Fira Sans\",\n\t\"Droid Sans\", \"Helvetica Neue\", sans-serif !important;\n}\n$enable-shadows: false;\n$enable-gradients: false;\n$enable-rounded: true;\n\n// Bootstrap Variable Overrides\n\n\n// Import themes from installed apps\n@import \"frappe/public/scss/website.bundle\";\n@import \"erpnext/public/scss/website\";\n\n\n\n// Custom Theme\n\n\n:root {\n\t}\n",
+ "theme_url": "/files/website_theme/digital_subscriptions_style.css"
+}
