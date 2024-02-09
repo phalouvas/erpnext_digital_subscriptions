@@ -6,7 +6,7 @@
 
 {% block page_content %}
     {% for doc in docs %}
-        <a class="row align-items-center border shadow rounded m-4 p-4 text-decoration-none text-white bg-primary" href='/download_item?name={{ doc.name }}'>
+        <a class="row align-items-center border shadow rounded m-4 p-4 text-decoration-none download_list" href='/download_item?name={{ doc.name }}'>
             <div class="col-sm-6 "><b>{{ doc.item_name }}</b></div>
             <div class="col-sm-6 ">Valid until: <b> {{ frappe.utils.formatdate(doc.ends_on, "dd-MMM-yyyy") }}</b></div>
         </a>
