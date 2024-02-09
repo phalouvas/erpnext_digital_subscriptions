@@ -9,7 +9,10 @@
     {% for doc in docs %}
     <div class="col-sm-12 col-md-5 card border ml-auto mb-4">
         <div class="card-header">
-            Version {{ doc.version }}
+            {% if doc.release_type == "Beta" %}
+            <span class="badge badge-warning">{{ doc.release_type }}</span>
+            {% else %}
+            <span class="badge badge-success">{{ doc.release_type }}</span>{% endif %} v{{ doc.version }}
         </div>
         <div class="card-body">
             <h5 class="card-title">Requirements</h5>
