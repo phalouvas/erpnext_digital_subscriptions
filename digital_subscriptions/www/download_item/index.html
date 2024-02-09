@@ -1,19 +1,10 @@
 {% extends "templates/web.html" %}
-{% block title %}{{ _('Download List') }}{% endblock %}
 
-{% block head_include %}
-{% endblock %}
-
-{% block script %}
+{% block header %}
+{{item.item_name}}
 {% endblock %}
 
 {% block page_content %}
-<div class="page-header-wrapper">
-    <div class="page-header">
-        <h3 class="my-account-header">{{ item.item_name }}</h3>
-    </div>
-</div>
-
 <div class="web-list-item transaction-list-item">
     {% for doc in docs %}
     <div class="card bg-light mb-3">

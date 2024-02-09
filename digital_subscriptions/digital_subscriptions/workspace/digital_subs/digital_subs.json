@@ -1,0 +1,69 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"hfp9z4W9Py\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">SP Digital Subscriptions</span>\",\"col\":12}},{\"id\":\"spVZ9kPMiA\",\"type\":\"card\",\"data\":{\"card_name\":\"File Management\",\"col\":4}}]",
+ "creation": "2024-02-09 06:33:37.188324",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "upload-lg",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Digital Subs",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "File Management",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "File Subscription",
+   "link_count": 0,
+   "link_to": "File Subscription",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "File Version",
+   "link_count": 0,
+   "link_to": "File Version",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "File Settings",
+   "link_count": 0,
+   "link_to": "File Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2024-02-09 06:38:27.921253",
+ "modified_by": "Administrator",
+ "module": "Digital Subscriptions",
+ "name": "Digital Subs",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 28.0,
+ "shortcuts": [],
+ "title": "Digital Subs"
+}

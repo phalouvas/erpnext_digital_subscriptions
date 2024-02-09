@@ -11,6 +11,7 @@ def get_context(context):
 	if context.subscription.ends_on < datetime.datetime.now():
 		frappe.throw("Not allowed")
 	context.item = frappe.get_doc("Item", context.subscription.item)
+	context.title = context.item.item_name
 
 	context.docs = []
 	if (not context.subscription.disabled):
