@@ -1,0 +1,21 @@
+{
+ "button_gradients": 0,
+ "button_rounded_corners": 1,
+ "button_shadows": 0,
+ "creation": "2024-02-09 18:11:11.526741",
+ "custom": 0,
+ "docstatus": 0,
+ "doctype": "Website Theme",
+ "font_properties": "wght@300;400;500;600;700;800",
+ "google_font": "Roboto",
+ "idx": 0,
+ "ignored_apps": [],
+ "modified": "2024-02-09 18:12:01.684746",
+ "modified_by": "Administrator",
+ "module": "Digital Subscriptions",
+ "name": "Digital Subscriptions",
+ "owner": "Administrator",
+ "theme": "Digital Subscriptions",
+ "theme_scss": "\n@import url(\"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;800&display=swap\");\n// backward compatibility. deprecated in v15\n$font-family-sans-serif: \"Roboto\", \"InterVariable\", \"Inter\", -apple-system, BlinkMacSystemFont,\n\t\"Segoe UI\", \"Roboto\", \"Oxygen\", \"Ubuntu\", \"Cantarell\", \"Fira Sans\",\n\t\"Droid Sans\", \"Helvetica Neue\", sans-serif;\n\n// override font stack if custom font is set in website theme\n:root {\n\t--font-stack: \"Roboto\", \"InterVariable\", \"Inter\", -apple-system, BlinkMacSystemFont,\n\t\"Segoe UI\", \"Roboto\", \"Oxygen\", \"Ubuntu\", \"Cantarell\", \"Fira Sans\",\n\t\"Droid Sans\", \"Helvetica Neue\", sans-serif !important;\n}\n$enable-shadows: false;\n$enable-gradients: false;\n$enable-rounded: true;\n\n// Bootstrap Variable Overrides\n\n\n// Import themes from installed apps\n@import \"frappe/public/scss/website.bundle\";\n@import \"erpnext/public/scss/website\";\n\n\n\n// Custom Theme\n\n\n:root {\n\t}\n",
+ "theme_url": "/files/website_theme/digital_subscriptions_style.css"
+}
