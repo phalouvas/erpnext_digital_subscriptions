@@ -1,29 +1,38 @@
 {% extends "templates/web.html" %}
-{% block title %}{{ _('Download List') }}{% endblock %}
 
-{% block head_include %}
-{% endblock %}
-
-{% block script %}
+{% block header %}
+{{item.item_name}}
 {% endblock %}
 
 {% block page_content %}
-<div class="page-header-wrapper">
-    <div class="page-header">
-        <h3 class="my-account-header">{{ item.item_name }}</h3>
-    </div>
-</div>
-
-<div class="web-list-item transaction-list-item">
+<div class="row no-gutters">
     {% for doc in docs %}
-    <div class="card bg-light mb-3">
-        <div class="card-header">Version {{ doc.version }}</div>
-        <div class="card-body">
-            {{ doc.description }}
+    <div class="col-sm-12 col-md-5 card border shadow ml-auto mb-4">
+        <div class="card-header">
+            {% if doc.release_type == "Beta" %}
+            <span class="badge badge-warning">{{ doc.release_type }}</span>
+            {% else %}
+            <span class="badge badge-success">{{ doc.release_type }}</span>{% endif %} v{{ doc.version }}
         </div>
-        <a class="transaction-item-link" href='{{ doc.file }}'>Link</a>
+        <div class="card-body">
+            <h5 class="card-title">Requirements</h5>
+            <p class="card-text">{{ doc.requirements }}</p>
+            <h5 class="card-title">Changelog</h5>
+            <p class="card-text">{{ doc.changelog }}</p>
+            <a href="/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={{subscription.name}}&version={{doc.name}}" class="btn btn-primary file-button">{{ _("Download") }}</a>
+        </div>
+        <div class="card-footer text-muted">
+            Release Date: {{ frappe.utils.formatdate(doc.release_date, "dd-MMM-yyyy") }}
+        </div>
     </div>
     {% endfor %}
 </div>
+<p class="text-muted small">
+    Lines starting with # (hash) indicate bug fixes<br>
+    Lines starting with + (plus) indicate added features<br>
+    Lines starting with - (dash) indicate removed features<br>
+    Lines starting with ~ (tilde) indicate miscellaneous changes<br>
+    All other lines are comments and/or notes
+</p>
 
 {% endblock %}

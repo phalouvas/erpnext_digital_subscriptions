@@ -1,26 +1,14 @@
 {% extends "templates/web.html" %}
-{% block title %}{{ _('Download List') }}{% endblock %}
 
-{% block head_include %}
-{% endblock %}
-
-{% block script %}
+{% block header %}
+{{title}}
 {% endblock %}
 
 {% block page_content %}
-<div class="page-header-wrapper">
-	<div class="page-header">
-	    <h3 class="my-account-header">Download</h3>
-	</div>
-</div>
-
-<div class="web-list-item transaction-list-item">
     {% for doc in docs %}
-        <div class="row align-items-center alert alert-secondary">
-            <div class="col-sm-4 "><b>{{ doc.item_name }}</b></div>
-            <div class="col-sm-4 ">Ends On: <b> {{ doc.ends_on }}</b></div>
-            <a class="transaction-item-link" href='/download_item?name={{ doc.name }}'>Link</a>
-        </div>
+        <a class="row align-items-center border shadow rounded m-4 p-4 text-decoration-none download_list" href='/download_item?name={{ doc.name }}'>
+            <div class="col-sm-6 "><b>{{ doc.item_name }}</b></div>
+            <div class="col-sm-6 ">Valid until: <b> {{ frappe.utils.formatdate(doc.ends_on, "dd-MMM-yyyy") }}</b></div>
+        </a>
     {% endfor %}
-</div>
 {% endblock %}

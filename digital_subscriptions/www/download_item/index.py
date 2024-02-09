@@ -11,16 +11,21 @@ def get_context(context):
 	if context.subscription.ends_on < datetime.datetime.now():
 		frappe.throw("Not allowed")
 	context.item = frappe.get_doc("Item", context.subscription.item)
+	context.title = context.item.item_name
 
 	context.docs = []
 	if (not context.subscription.disabled):
 		versions = frappe.get_all(
 				"File Version",
 				filters={"item": context.item.name, "disabled": 0},
-				fields=["version", "file", "description"]
+				fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date"],
+				order_by="release_date desc",
 			)
 			
 		context.docs = versions
+
+	context.no_cache = 0
+	context.parents = [{"name": _("Home"), "route": "/"}, {"name": _("Download List"), "route": "/download_list"}]
 
 def is_file_shared(docname):
     # Query the DocShare table to check if the document is shared with the user
