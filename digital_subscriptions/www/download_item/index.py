@@ -19,6 +19,7 @@ def get_context(context):
 				"File Version",
 				filters={"item": context.item.name, "disabled": 0},
 				fields=["version", "file", "changelog", "requirements", "release_type", "release_date"],
+				order_by="release_date desc",
 			)
 			
 		context.docs = versions
