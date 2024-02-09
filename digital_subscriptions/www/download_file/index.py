@@ -6,7 +6,8 @@ from werkzeug.wsgi import wrap_file
 from urllib.parse import quote
 import mimetypes
 
-def get_context(context):    
+@frappe.whitelist(allow_guest=False)
+def download():    
     if frappe.session.user == "Guest":
         frappe.throw(_("You don't have permission to access this file"), frappe.PermissionError)
     
@@ -31,7 +32,8 @@ def get_context(context):
     if version.disabled:
         frappe.throw(_("Version is disabled"), frappe.PermissionError)
 
-    return send_private_file(version.file.split("/private", 1)[1])
+    response = send_private_file(version.file.split("/private", 1)[1])    
+    return response
     
 def send_private_file(path: str) -> Response:
 	path = os.path.join(frappe.local.conf.get("private_path", "private"), path.strip("/"))
