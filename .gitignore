@@ -5,3 +5,16 @@
 tags
 digital_subscriptions/docs/current
 node_modules/
+digital_subscriptions/public/dist
+conf.py
+locale
+latest_updates.json
+.wnf-lang-status
+dist/
+*.swp
+*.swo
+__pycache__
+*~
+.idea/
+node_modules/
+.backportrc.json
