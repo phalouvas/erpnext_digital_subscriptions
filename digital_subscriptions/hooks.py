@@ -89,6 +89,9 @@ web_include_css = "digital_subscriptions.bundle.css"
 # has_permission = {
 #	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
+has_website_permission = {
+	"Item Group": "digital_subscriptions.digital_subscriptions.hooks.item_group.has_website_permission",
+}
 
 # DocType Class
 # ---------------
