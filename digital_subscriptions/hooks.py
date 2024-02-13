@@ -113,6 +113,7 @@ doc_events = {
         "validate": "digital_subscriptions.digital_subscriptions.web_form.vies.vies.validate_vies"
     }
 }
+on_session_creation = "digital_subscriptions.digital_subscriptions.web_form.vies.vies.create_customer_or_supplier"
 
 # doc_events = {
 #	"*": {
