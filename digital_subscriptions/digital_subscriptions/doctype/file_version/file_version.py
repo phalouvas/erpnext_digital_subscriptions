@@ -13,7 +13,10 @@ import datetime
 from frappe.model.document import Document
 
 class FileVersion(Document):
-	pass
+    def autoname(self):
+        # Get the item_name from item
+        item_name = frappe.get_value("Item", self.item, "item_name")
+        self.name = f"{item_name} v{self.version}"
 
 @frappe.whitelist(allow_guest=False)
 def download():    
