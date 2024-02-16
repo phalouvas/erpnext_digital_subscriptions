@@ -9,6 +9,7 @@ from werkzeug.wsgi import wrap_file
 from urllib.parse import quote
 import mimetypes
 import datetime
+import xml.etree.ElementTree as ET
 
 from frappe.model.document import Document
 
@@ -67,4 +68,58 @@ def send_private_file(path: str) -> Response:
 
 	response.mimetype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
+	return response
+
+@frappe.whitelist(allow_guest=True)
+def phrs():
+	product = frappe.request.args.get('product')
+	if not product:
+		frappe.throw(_("Product not found"), frappe.DoesNotExistError)
+
+	subscription = frappe.request.args.get("dlid")
+	if not subscription:
+		frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
+	subscription = frappe.get_doc("File Subscription", subscription)
+	if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
+		frappe.throw("Subscription expired", frappe.PermissionError)
+
+	item = frappe.get_doc("Item", subscription.item)
+	versions = frappe.get_all(
+			"File Version",
+			filters={"item": item.name, "disabled": 0},
+			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date"],
+			order_by="release_date desc",
+		)
+		
+	# Convert versions to XML format
+	xml_string = "<updates>"
+	for version in versions:
+		update_element = ET.Element("update")
+		name_element = ET.SubElement(update_element, "name")
+		name_element.text = item.name
+		description_element = ET.SubElement(update_element, "description")
+		description_element.text = item.description
+		element_element = ET.SubElement(update_element, "element")
+		element_element.text = "pending element"
+		type_element = ET.SubElement(update_element, "type")
+		type_element.text = "pending type"
+		client_element = ET.SubElement(update_element, "client")
+		client_element.text = "pending client"
+		version_element = ET.SubElement(update_element, "version")
+		version_element.text = version.version
+		maintainer_element = ET.SubElement(update_element, "maintainer")
+		maintainer_element.text = "KAINOTOMO PH LTD"
+		maintainerurl_element = ET.SubElement(update_element, "maintainerurl")
+		maintainerurl_element.text = "https://kainotomo.com"
+		targetplatform_element = ET.SubElement(update_element, "targetplatform")
+		targetplatform_element.text = "pending targetplatform"
+		downloads_element = ET.SubElement(update_element, "downloads")
+		download_element = ET.SubElement(downloads_element, "download")
+		download_element.text = f"/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={subscription.name}&version={version.name}"
+		xml_string += ET.tostring(update_element, encoding="unicode")
+	xml_string += "</updates>"
+
+	response = Response()
+	response.data = xml_string
+	response.mimetype = "application/xml"
 	return response
