@@ -7,7 +7,7 @@
 {% block page_content %}
 <div class="row no-gutters">
     {% for doc in docs %}
-    <div class="col-sm-12 col-md-5 card border shadow ml-auto mb-4">
+    <div class="col-sm-12 col-md-5 card border shadow mr-auto mb-4">
         <div class="card-header">
             {% if doc.release_type == "Beta" %}
             <span class="badge badge-warning">{{ doc.release_type }}</span>
