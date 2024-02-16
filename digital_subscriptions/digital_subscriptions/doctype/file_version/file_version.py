@@ -18,10 +18,8 @@ class FileVersion(Document):
         item_name = frappe.get_value("Item", self.item, "item_name")
         self.name = f"{item_name} v{self.version}"
 
-@frappe.whitelist(allow_guest=False)
+@frappe.whitelist(allow_guest=True)
 def download():    
-    if frappe.session.user == "Guest":
-        frappe.throw(_("You don't have permission to access this file"), frappe.PermissionError)
     
     subscription = frappe.request.args.get("subscription")
     if not subscription:
@@ -29,16 +27,6 @@ def download():
     subscription = frappe.get_doc("File Subscription", subscription)
     if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
           frappe.throw("Not allowed", frappe.PermissionError)
-            
-    # get customer user
-    customer = frappe.get_doc("Customer", subscription.customer)
-    is_allowed = False
-    for portal_user in customer.portal_users:
-        if portal_user.user == frappe.session.user:
-            is_allowed = True
-            break
-    if not is_allowed:
-        frappe.throw(_("You don't have permission to access this file"), frappe.PermissionError)
 
     version = frappe.request.args.get("version")
     if not version:
