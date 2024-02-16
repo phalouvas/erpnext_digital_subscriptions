@@ -10,6 +10,7 @@ from urllib.parse import quote
 import mimetypes
 import datetime
 import xml.etree.ElementTree as ET
+import urllib.parse
 
 from frappe.model.document import Document
 
@@ -111,7 +112,7 @@ def phrs():
 		downloadurl_element = ET.SubElement(downloads_element, "download")
 		downloadurl_element.set("type", "upgrade")
 		downloadurl_element.set("format", "zip")
-		downloadurl_element.text = f"/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={subscription.name}&version={version.name}"
+		downloadurl_element.text = f"{frappe.utils.get_url()}/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={subscription.name}&version={urllib.parse.quote(version.name)}"
 		maintainer_element = ET.SubElement(update_element, "maintainer")
 		maintainer_element.text = "KAINOTOMO PH LTD"
 		maintainerurl_element = ET.SubElement(update_element, "maintainerurl")
