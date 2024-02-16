@@ -73,10 +73,6 @@ def send_private_file(path: str) -> Response:
 
 @frappe.whitelist(allow_guest=True)
 def phrs():
-	product = frappe.request.args.get('product')
-	if not product:
-		frappe.throw(_("Product not found"), frappe.DoesNotExistError)
-
 	subscription = frappe.request.args.get("dlid")
 	if not subscription:
 		frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
