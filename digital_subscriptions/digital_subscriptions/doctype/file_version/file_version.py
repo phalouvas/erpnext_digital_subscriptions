@@ -9,6 +9,8 @@ from werkzeug.wsgi import wrap_file
 from urllib.parse import quote
 import mimetypes
 import datetime
+import xml.etree.ElementTree as ET
+import urllib.parse
 
 from frappe.model.document import Document
 
@@ -18,10 +20,8 @@ class FileVersion(Document):
         item_name = frappe.get_value("Item", self.item, "item_name")
         self.name = f"{item_name} v{self.version}"
 
-@frappe.whitelist(allow_guest=False)
+@frappe.whitelist(allow_guest=True)
 def download():    
-    if frappe.session.user == "Guest":
-        frappe.throw(_("You don't have permission to access this file"), frappe.PermissionError)
     
     subscription = frappe.request.args.get("subscription")
     if not subscription:
@@ -29,16 +29,6 @@ def download():
     subscription = frappe.get_doc("File Subscription", subscription)
     if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
           frappe.throw("Not allowed", frappe.PermissionError)
-            
-    # get customer user
-    customer = frappe.get_doc("Customer", subscription.customer)
-    is_allowed = False
-    for portal_user in customer.portal_users:
-        if portal_user.user == frappe.session.user:
-            is_allowed = True
-            break
-    if not is_allowed:
-        frappe.throw(_("You don't have permission to access this file"), frappe.PermissionError)
 
     version = frappe.request.args.get("version")
     if not version:
@@ -79,4 +69,61 @@ def send_private_file(path: str) -> Response:
 
 	response.mimetype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
+	return response
+
+@frappe.whitelist(allow_guest=True)
+def phrs():
+	product = frappe.request.args.get('product')
+	if not product:
+		frappe.throw(_("Product not found"), frappe.DoesNotExistError)
+
+	subscription = frappe.request.args.get("dlid")
+	if not subscription:
+		frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
+	subscription = frappe.get_doc("File Subscription", subscription)
+	if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
+		frappe.throw("Subscription expired", frappe.PermissionError)
+
+	item = frappe.get_doc("Item", subscription.item)
+	versions = frappe.get_all(
+			"File Version",
+			filters={"item": item.name, "disabled": 0},
+			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date", "element", "type", "client", "target_platform"],
+			order_by="release_date desc",
+		)
+		
+	# Convert versions to XML format
+	xml_string = "<updates>"
+	for version in versions:
+		update_element = ET.Element("update")
+		name_element = ET.SubElement(update_element, "name")
+		name_element.text = item.item_name
+		description_element = ET.SubElement(update_element, "description")
+		description_element.text = item.description
+		element_element = ET.SubElement(update_element, "element")
+		element_element.text = version.element
+		type_element = ET.SubElement(update_element, "type")
+		type_element.text = version.type
+		client_element = ET.SubElement(update_element, "client")
+		client_element.text = version.client
+		version_element = ET.SubElement(update_element, "version")
+		version_element.text = version.version		
+		downloads_element = ET.SubElement(update_element, "downloads")
+		downloadurl_element = ET.SubElement(downloads_element, "download")
+		downloadurl_element.set("type", "upgrade")
+		downloadurl_element.set("format", "zip")
+		downloadurl_element.text = f"{frappe.utils.get_url()}/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={subscription.name}&version={urllib.parse.quote(version.name)}"
+		maintainer_element = ET.SubElement(update_element, "maintainer")
+		maintainer_element.text = "KAINOTOMO PH LTD"
+		maintainerurl_element = ET.SubElement(update_element, "maintainerurl")
+		maintainerurl_element.text = "https://kainotomo.com"
+		targetplatform_element = ET.SubElement(update_element, "targetplatform")
+		targetplatform_element.set("name", "joomla")
+		targetplatform_element.text = version.target_platform
+		xml_string += ET.tostring(update_element, encoding="unicode")
+	xml_string += "</updates>"
+
+	response = Response()
+	response.data = xml_string
+	response.mimetype = "application/xml"
 	return response
