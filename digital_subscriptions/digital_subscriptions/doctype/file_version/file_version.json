@@ -10,9 +10,13 @@
  "field_order": [
   "version",
   "item",
+  "element",
+  "type",
   "column_break_qv7ij",
   "disabled",
   "file",
+  "client",
+  "target_platform",
   "section_break_uojuq",
   "release_type",
   "requirements",
@@ -93,11 +97,31 @@
    "fieldname": "requirements",
    "fieldtype": "Text Editor",
    "label": "Requirements"
+  },
+  {
+   "fieldname": "element",
+   "fieldtype": "Data",
+   "label": "Element"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Data",
+   "label": "Type"
+  },
+  {
+   "fieldname": "client",
+   "fieldtype": "Data",
+   "label": "Client"
+  },
+  {
+   "fieldname": "target_platform",
+   "fieldtype": "Data",
+   "label": "Target Platform"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-02-09 08:20:15.718310",
+ "modified": "2024-02-16 08:59:52.144327",
  "modified_by": "Administrator",
  "module": "Digital Subscriptions",
  "name": "File Version",

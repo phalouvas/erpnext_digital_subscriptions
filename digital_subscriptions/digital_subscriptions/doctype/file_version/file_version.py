@@ -87,7 +87,7 @@ def phrs():
 	versions = frappe.get_all(
 			"File Version",
 			filters={"item": item.name, "disabled": 0},
-			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date"],
+			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date", "element", "type", "client", "target_platform"],
 			order_by="release_date desc",
 		)
 		
@@ -96,26 +96,29 @@ def phrs():
 	for version in versions:
 		update_element = ET.Element("update")
 		name_element = ET.SubElement(update_element, "name")
-		name_element.text = item.name
+		name_element.text = item.item_name
 		description_element = ET.SubElement(update_element, "description")
 		description_element.text = item.description
 		element_element = ET.SubElement(update_element, "element")
-		element_element.text = "pending element"
+		element_element.text = version.element
 		type_element = ET.SubElement(update_element, "type")
-		type_element.text = "pending type"
+		type_element.text = version.type
 		client_element = ET.SubElement(update_element, "client")
-		client_element.text = "pending client"
+		client_element.text = version.client
 		version_element = ET.SubElement(update_element, "version")
-		version_element.text = version.version
+		version_element.text = version.version		
+		downloads_element = ET.SubElement(update_element, "downloads")
+		downloadurl_element = ET.SubElement(downloads_element, "download")
+		downloadurl_element.set("type", "upgrade")
+		downloadurl_element.set("format", "zip")
+		downloadurl_element.text = f"/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={subscription.name}&version={version.name}"
 		maintainer_element = ET.SubElement(update_element, "maintainer")
 		maintainer_element.text = "KAINOTOMO PH LTD"
 		maintainerurl_element = ET.SubElement(update_element, "maintainerurl")
 		maintainerurl_element.text = "https://kainotomo.com"
 		targetplatform_element = ET.SubElement(update_element, "targetplatform")
-		targetplatform_element.text = "pending targetplatform"
-		downloads_element = ET.SubElement(update_element, "downloads")
-		download_element = ET.SubElement(downloads_element, "download")
-		download_element.text = f"/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={subscription.name}&version={version.name}"
+		targetplatform_element.set("name", "joomla")
+		targetplatform_element.text = version.target_platform
 		xml_string += ET.tostring(update_element, encoding="unicode")
 	xml_string += "</updates>"
 
