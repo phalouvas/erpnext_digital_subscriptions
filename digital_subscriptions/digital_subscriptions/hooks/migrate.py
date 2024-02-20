@@ -9,7 +9,7 @@ def migrate():
         raise PermissionError("Only the Administrator can perform the migration.")
     
     # Get all users from table `rc11v_users`
-    users = frappe.db.sql("SELECT * FROM `rc11v_users` LIMIT 1", as_dict=True)
+    users = frappe.db.sql("SELECT * FROM `rc11v_users` LIMIT 2", as_dict=True)
     # For each user in `rc11v_users`, create a new user in `tabUser`
     for user in users:
         # Check if the user already exists in `tabUser`
@@ -29,11 +29,10 @@ def migrate():
                 ]
             }).insert()        
             create_contact(user_doc, ignore_links=True, ignore_mandatory=True)
+            frappe.db.commit()
 			
-            create_customer_or_supplier(user.email)
+        create_customer_or_supplier(user.email)
     
-    # commit
-    frappe.db.commit()
 
 
     # Get all subscriptions from table `rc11v_spdigitalsubs_transactions`
