@@ -116,7 +116,7 @@ def create_subscriptions():
 			AND TPaymentEntry.docstatus = 1
 			AND TPaymentEntry.party_type = 'Customer'
 		ORDER BY TPaymentEntry.posting_date
-		LIMIT 10;
+		LIMIT 50;
 	""", as_dict=True)
 
 	for payment in payments:
@@ -135,4 +135,4 @@ def create_subscriptions():
 			}).insert()
 			frappe.db.commit()
 
-	return ["Subscriptions created successfully.", payments]
+	return ["Subscriptions created successfully."]
