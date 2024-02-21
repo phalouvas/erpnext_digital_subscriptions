@@ -91,14 +91,18 @@ def create_subscriptions():
 	
 	# Get all sales order with status "Completed" and "transaction_date" not older than 1 year
 	one_year_ago = datetime.now() - timedelta(days=365)
-	items = frappe.db.sql(f"""
+	payments = frappe.db.sql(f"""
 		SELECT 
-			TPaymentEntry.name AS payment_entry,
+			TPaymentEntry.name AS name,
+			TPaymentEntry.party AS party,
 			TPaymentEntryReference.reference_name AS reference_name,
 			TPaymentEntryReference.reference_doctype AS reference_doctype,
 			TPaymentEntry.posting_date AS posting_date,
-			TFileVersion_invoice.item AS invoice_item,
-			TFileVersion_order.item AS order_item
+			CASE
+				WHEN TPaymentEntryReference.reference_doctype = 'Sales Invoice' THEN TFileVersion_invoice.item
+				WHEN TPaymentEntryReference.reference_doctype = 'Sales Order' THEN TFileVersion_order.item
+				ELSE NULL
+			END AS item
 		FROM `tabPayment Entry` AS TPaymentEntry
 			LEFT JOIN `tabPayment Entry Reference` AS TPaymentEntryReference ON TPaymentEntry.name = TPaymentEntryReference.parent
 			LEFT JOIN `tabSales Invoice` AS TSalesInvoice ON TPaymentEntryReference.reference_name = TSalesInvoice.name AND TPaymentEntryReference.reference_doctype = 'Sales Invoice'
@@ -115,21 +119,19 @@ def create_subscriptions():
 		LIMIT 10;
 	""", as_dict=True)
 
-	for item in items:
+	for payment in payments:
 		# Check if the subscription already exists in `tabSubscription`
-		subscription_exists = frappe.get_all("File Subscription", filters={"item": order.item_name, "sales_invoice": order.invoice_name}, fields=["name"])
+		if not payment.item:
+			continue
+		subscription_exists = frappe.get_all("File Subscription", filters={"item": payment.item, "payment_entry": payment.name}, fields=["name"])
 		if not subscription_exists:
-			subscription_doc = frappe.get_doc({
-				"doctype": "Subscription",
-				"subscription_name": order.item_name,
-				"customer": order.customer,
-				"start_date": order.order_date,
-				"end_date": order.order_date + timedelta(days=365),
-				"status": "Active",
-				"billing_interval": "Yearly",
-				"billing_period": 1,
-				"billing_cycle": 1
+			frappe.get_doc({
+				"doctype": "File Subscription",
+				"customer": payment.party,
+				"payment_entry": payment.name,
+				"starts_on": payment.posting_date,
+				"ends_one": payment.posting_Date + timedelta(days=365)
 			}).insert()
 			frappe.db.commit()
 
-	return ["Subscriptions created successfully.", data]
+	return ["Subscriptions created successfully.", payments]
