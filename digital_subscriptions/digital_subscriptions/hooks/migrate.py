@@ -93,18 +93,17 @@ def create_subscriptions():
 	one_year_ago = datetime.now() - timedelta(days=365)
 	data = frappe.db.sql(f"""
 		SELECT 
-			TItem.name AS item_name,
-			TOrder.transaction_date AS order_date,
-			TOrder.name AS order_name,
-			TOrder.customer AS customer
-		FROM `tabSales Order Item` AS TOrderItem
-			LEFT JOIN `tabSales Order` AS TOrder ON TOrderItem.parent = TOrder.name
-			LEFT JOIN `tabItem` AS TItem ON TOrderItem.item_code = TItem.item_code
-			LEFT JOIN `tabItem Group` AS TItemGroup ON TItem.item_group = TItemGroup.name
-		WHERE TOrder.transaction_date >= '{one_year_ago}'
-			AND TOrder.status = 'Completed'
-			AND TItemGroup.name = 'Joomla! Extensions Shop'
-		ORDER BY TOrder.transaction_date
+			TPaymentEntry.name AS payment_entry,
+			TPaymentEntryReference.reference_name AS reference_name,
+			TPaymentEntryReference.reference_doctype AS reference_doctype,
+			TPaymentEntry.posting_date AS posting_date
+		FROM `tabPayment Entry` AS TPaymentEntry
+			LEFT JOIN `tabPayment Entry Reference` AS TPaymentEntryReference ON TPaymentEntry.name = TPaymentEntryReference.parent
+		WHERE TPaymentEntry.posting_date >= '{one_year_ago}'
+			AND TPaymentEntry.payment_type = 'Receive'
+			AND TPaymentEntry.docstatus = 1
+			AND TPaymentEntry.party_type = 'Customer'
+		ORDER BY TPaymentEntry.posting_date
 		LIMIT 1;
 	""", as_dict=True)
 
