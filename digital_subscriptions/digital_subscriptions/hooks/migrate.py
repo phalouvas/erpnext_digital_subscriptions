@@ -1,7 +1,7 @@
 import frappe
 from frappe.exceptions import PermissionError
 from frappe.core.doctype.user.user import create_contact
-import re
+from erpnext.portal.utils import create_party_contact, party_exists
 
 @frappe.whitelist(allow_guest=False)
 def migrate():
@@ -29,16 +29,12 @@ def migrate():
                 ]
             }).insert()        
             create_contact(user_doc, ignore_links=True, ignore_mandatory=True)
-            frappe.db.commit()
 			
         create_customer_or_supplier(user.email)
-    
 
+    frappe.db.commit()
 
-    # Get all subscriptions from table `rc11v_spdigitalsubs_transactions`
-    subscriptions = frappe.db.sql("SELECT * FROM `rc11v_spdigitalsubs_transactions` LIMIT 1", as_dict=True)
-
-    return [users, subscriptions]
+    return ["Migration completed successfully."]
 
 def create_customer_or_supplier(user):
 	"""Based on the default Role (Customer, Supplier), create a Customer / Supplier.
@@ -54,7 +50,7 @@ def create_customer_or_supplier(user):
 	if default_role not in ["Customer"]:
 		return
 
-	# get customer
+	# create customer / supplier if the user has that role
 	if portal_settings.default_role and portal_settings.default_role in user_roles:
 		doctype = portal_settings.default_role
 	else:
@@ -63,22 +59,38 @@ def create_customer_or_supplier(user):
 	if not doctype:
 		return
 
-	contact_name = frappe.db.get_value("Contact", {"email_id": user})
-	if contact_name:
-		contact = frappe.get_doc("Contact", contact_name)
-		for link in contact.links:
-			if link.link_doctype == doctype:
-				party = frappe.get_doc(doctype, link.link_name)
-
-	if not party:
+	if party_exists(doctype, user):
+		party = frappe.get_doc(doctype, {"email_id": user})
+		if not frappe.db.exists("Portal User", {"user": user}):
+			portal_user = frappe.new_doc("Portal User")
+			portal_user.user = user
+			party.append("portal_users", portal_user)
+			fullname = frappe.utils.get_fullname(user)
+			party.customer_name = fullname
+			party.save(ignore_permissions=True)
 		return
 
-	if not frappe.db.exists("Portal User", {"user": user}):
-		portal_user = frappe.new_doc("Portal User")
-		portal_user.user = user
-		party.append("portal_users", portal_user)
-		fullname = frappe.utils.get_fullname(user)
-		party.customer_name = fullname
-		party.save(ignore_permissions=True)
+	party = frappe.new_doc(doctype)
+	fullname = frappe.utils.get_fullname(user)
+
+	if not doctype == "Customer":
+		party.update(
+			{
+				"supplier_name": fullname,
+				"supplier_group": "All Supplier Groups",
+				"supplier_type": "Individual",
+			}
+		)
+
+	party.flags.ignore_mandatory = True
+	party.insert(ignore_permissions=True)
+
+	alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
+
+	if party_exists(alternate_doctype, user):
+		# if user is both customer and supplier, alter fullname to avoid contact name duplication
+		fullname += "-" + doctype
+
+	create_party_contact(doctype, fullname, user, party.name)
 
 	return party
