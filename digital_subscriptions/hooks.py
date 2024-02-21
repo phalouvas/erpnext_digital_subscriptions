@@ -106,8 +106,8 @@ has_website_permission = {
 # Hook on document methods and events
 
 doc_events = {
-    "Payment Request": {
-        "on_payment_authorized": "digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.create_file_subscription"
+    "Payment Entry": {
+        "on_submit": "digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.create_file_subscription"
     },
     "Customer": {
         "validate": "digital_subscriptions.digital_subscriptions.web_form.vies.vies.validate_vies"
