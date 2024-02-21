@@ -91,23 +91,31 @@ def create_subscriptions():
 	
 	# Get all sales order with status "Completed" and "transaction_date" not older than 1 year
 	one_year_ago = datetime.now() - timedelta(days=365)
-	data = frappe.db.sql(f"""
+	items = frappe.db.sql(f"""
 		SELECT 
 			TPaymentEntry.name AS payment_entry,
 			TPaymentEntryReference.reference_name AS reference_name,
 			TPaymentEntryReference.reference_doctype AS reference_doctype,
-			TPaymentEntry.posting_date AS posting_date
+			TPaymentEntry.posting_date AS posting_date,
+			TFileVersion_invoice.item AS invoice_item,
+			TFileVersion_order.item AS order_item
 		FROM `tabPayment Entry` AS TPaymentEntry
 			LEFT JOIN `tabPayment Entry Reference` AS TPaymentEntryReference ON TPaymentEntry.name = TPaymentEntryReference.parent
+			LEFT JOIN `tabSales Invoice` AS TSalesInvoice ON TPaymentEntryReference.reference_name = TSalesInvoice.name AND TPaymentEntryReference.reference_doctype = 'Sales Invoice'
+			LEFT JOIN `tabSales Invoice Item` AS TSalesInvoiceItem ON TSalesInvoice.name = TSalesInvoiceItem.parent AND TPaymentEntryReference.reference_doctype = 'Sales Invoice'
+			LEFT JOIN `tabFile Version` AS TFileVersion_invoice ON TSalesInvoiceItem.item_code = TFileVersion_invoice.item AND TPaymentEntryReference.reference_doctype = 'Sales Invoice'
+			LEFT JOIN `tabSales Order` AS TSalesOrder ON TPaymentEntryReference.reference_name = TSalesOrder.name AND TPaymentEntryReference.reference_doctype = 'Sales Order'
+			LEFT JOIN `tabSales Order Item` AS TSalesOrderItem ON TSalesOrder.name = TSalesOrderItem.parent AND TPaymentEntryReference.reference_doctype = 'Sales Order'
+			LEFT JOIN `tabFile Version` AS TFileVersion_order ON TSalesOrderItem.item_code = TFileVersion_order.item AND TPaymentEntryReference.reference_doctype = 'Sales Order'
 		WHERE TPaymentEntry.posting_date >= '{one_year_ago}'
 			AND TPaymentEntry.payment_type = 'Receive'
 			AND TPaymentEntry.docstatus = 1
 			AND TPaymentEntry.party_type = 'Customer'
 		ORDER BY TPaymentEntry.posting_date
-		LIMIT 1;
+		LIMIT 10;
 	""", as_dict=True)
 
-	for order in data:
+	for item in items:
 		# Check if the subscription already exists in `tabSubscription`
 		subscription_exists = frappe.get_all("File Subscription", filters={"item": order.item_name, "sales_invoice": order.invoice_name}, fields=["name"])
 		if not subscription_exists:
