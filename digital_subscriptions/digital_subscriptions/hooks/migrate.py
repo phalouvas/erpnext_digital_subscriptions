@@ -1,7 +1,7 @@
 import frappe
 from frappe.exceptions import PermissionError
 from frappe.core.doctype.user.user import create_contact
-from erpnext.portal.utils import create_party_contact, party_exists
+from erpnext.portal.utils import party_exists
 
 @frappe.whitelist(allow_guest=False)
 def migrate():
@@ -12,7 +12,7 @@ def migrate():
 	users = frappe.db.sql("SELECT * FROM `rc11v_users` LIMIT 2", as_dict=True)
 	# For each user in `rc11v_users`, create a new user in `tabUser`
 	for user in users:
-		create_customer(user)
+		customer = create_customer(user)
 
 		# Check if the user already exists in `tabUser`
 		user_exists = frappe.get_all("User", filters={"email": user.email}, fields=["name"])
@@ -29,7 +29,19 @@ def migrate():
 						"role": "Customer"
 					}
 				]
-			}).insert()        
+			}).insert()  
+			frappe.db.commit()    
+			contact = frappe.new_doc("Contact")
+			contact.update({"first_name": user.name, "email_id": user.email})
+			contact.append("links", dict(link_doctype="Customer", link_name=user.name))
+			contact.append("email_ids", dict(email_id=user.email, is_primary=True))
+			contact.flags.ignore_mandatory = True
+			contact.insert(ignore_permissions=True)
+			frappe.db.commit()
+			if customer:
+				customer.customer_primary_contact = contact.name
+				customer.save(ignore_permissions=True)
+				frappe.db.commit()
 			create_contact(user_doc, ignore_links=True, ignore_mandatory=True)
 			
 		frappe.db.commit()
@@ -51,7 +63,6 @@ def create_customer(user):
 	party.flags.ignore_mandatory = True
 	party.insert(ignore_permissions=True)
 
-	create_party_contact(doctype, fullname, user, party.name)
 	frappe.db.commit()
 
 	return party
