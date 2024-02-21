@@ -129,8 +129,9 @@ def create_subscriptions():
 				"doctype": "File Subscription",
 				"customer": payment.party,
 				"payment_entry": payment.name,
+				"item": payment.item,
 				"starts_on": payment.posting_date,
-				"ends_one": payment.posting_Date + timedelta(days=365)
+				"ends_on": payment.posting_date + timedelta(days=365)
 			}).insert()
 			frappe.db.commit()
 
