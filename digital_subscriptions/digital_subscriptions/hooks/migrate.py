@@ -92,7 +92,7 @@ def create_subscriptions():
 	# Get all sales order with status "Completed" and "transaction_date" not older than 1 year
 	one_year_ago = datetime.now() - timedelta(days=365)
 	payments = frappe.db.sql(f"""
-		SELECT 
+		SELECT DISTINCT
 			TPaymentEntry.name AS name,
 			TPaymentEntry.party AS party,
 			TPaymentEntryReference.reference_name AS reference_name,
@@ -115,8 +115,7 @@ def create_subscriptions():
 			AND TPaymentEntry.payment_type = 'Receive'
 			AND TPaymentEntry.docstatus = 1
 			AND TPaymentEntry.party_type = 'Customer'
-		ORDER BY TPaymentEntry.posting_date
-		LIMIT 50;
+		ORDER BY TPaymentEntry.posting_date;
 	""", as_dict=True)
 
 	for payment in payments:
