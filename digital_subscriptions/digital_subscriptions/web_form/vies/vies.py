@@ -113,6 +113,8 @@ def create_customer_or_supplier():
 		portal_user.user = user
 		party.append("portal_users", portal_user)
 		party.customer_name = fullname
+		if not party.customer_primary_contact:
+			party.customer_primary_contact = contact_name
 		party.save(ignore_permissions=True)
 
 	return party
