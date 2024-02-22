@@ -1,6 +1,7 @@
 import requests
 import frappe
 from xml.etree import ElementTree as ET
+from frappe.model.rename_doc import update_document_title, rename_doc
 
 def get_context(context):
 	# do your magic here
@@ -93,10 +94,24 @@ def create_customer_or_supplier():
 		return
 
 	if not frappe.db.exists("Portal User", {"user": user}):
+		fullname = frappe.utils.get_fullname(user)
+		if party.name != fullname:
+			new_name = rename_doc(
+				doctype = doctype, 
+				old = party.name, 
+				new = fullname, 
+				force=False, 
+				merge=False, 
+				ignore_permissions = True, 
+				ignore_if_exists = False, 
+				show_alert = False,
+				rebuild_search = True,
+				doc = None,
+				validate= True)
+			party = frappe.get_doc(doctype, new_name)
 		portal_user = frappe.new_doc("Portal User")
 		portal_user.user = user
 		party.append("portal_users", portal_user)
-		fullname = frappe.utils.get_fullname(user)
 		party.customer_name = fullname
 		party.save(ignore_permissions=True)
 
