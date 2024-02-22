@@ -10,11 +10,12 @@
  "field_order": [
   "customer",
   "item",
-  "sales_order",
-  "disabled",
+  "payment_entry",
+  "naming_series",
+  "column_break_hxvo",
   "starts_on",
   "ends_on",
-  "naming_series"
+  "disabled"
  ],
  "fields": [
   {
@@ -32,12 +33,6 @@
    "label": "Item",
    "options": "Item",
    "reqd": 1
-  },
-  {
-   "fieldname": "sales_order",
-   "fieldtype": "Link",
-   "label": "Sales Order",
-   "options": "Sales Order"
   },
   {
    "default": "0",
@@ -65,10 +60,20 @@
    "label": "Series",
    "options": "FILE-PLN-.YYYY.-",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_hxvo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Link",
+   "label": "Payment Entry",
+   "options": "Payment Entry"
   }
  ],
  "links": [],
- "modified": "2023-06-13 08:33:54.159966",
+ "modified": "2024-02-21 15:14:29.513182",
  "modified_by": "Administrator",
  "module": "Digital Subscriptions",
  "name": "File Subscription",
