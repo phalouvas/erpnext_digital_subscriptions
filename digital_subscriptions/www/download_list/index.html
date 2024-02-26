@@ -5,10 +5,22 @@
 {% endblock %}
 
 {% block page_content %}
-    {% for doc in docs %}
+
+    {% if paid %}
+    <h5 class="text-center">Paid</h5>
+    {% endif %}
+    {% for doc in paid %}
         <a class="row align-items-center border shadow rounded m-4 p-4 text-decoration-none download_list" href='/download_item?name={{ doc.name }}'>
             <div class="col-sm-6 "><b>{{ doc.item_name }}</b></div>
             <div class="col-sm-6 ">Valid until: <b> {{ frappe.utils.formatdate(doc.ends_on, "dd-MMM-yyyy") }}</b></div>
+        </a>
+    {% endfor %}
+    {% if free %}
+    <h5 class="text-center">Free</h5>
+    {% endif %}
+    {% for doc in free %}
+        <a class="row align-items-center border shadow rounded m-4 p-4 text-decoration-none download_list" href='/download_item?item={{ doc.name }}'>
+            <div class="col-sm-6 "><b>{{ doc.item_name }}</b></div>
         </a>
     {% endfor %}
 {% endblock %}

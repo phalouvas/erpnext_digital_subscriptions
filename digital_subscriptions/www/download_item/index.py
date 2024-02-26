@@ -7,22 +7,23 @@ sitemap = 1
 
 def get_context(context):
 	name = frappe.form_dict.name
-	context.subscription = frappe.get_doc("File Subscription", name)
-	if context.subscription.ends_on < datetime.datetime.now() or context.subscription.disabled:
-		frappe.throw("Not allowed", frappe.PermissionError)
-	context.item = frappe.get_doc("Item", context.subscription.item)
+	if name:
+		context.subscription = frappe.get_doc("File Subscription", name)
+		if context.subscription.ends_on < datetime.datetime.now() or context.subscription.disabled:
+			frappe.throw("Not allowed", frappe.PermissionError)
+		context.item = frappe.get_doc("Item", context.subscription.item)
+	else:
+		context.item = frappe.get_doc("Item", frappe.form_dict.item)
+		context.subscription = {"name": None}
+
 	context.title = context.item.item_name
 
-	context.docs = []
-	if (not context.subscription.disabled):
-		versions = frappe.get_all(
-				"File Version",
-				filters={"item": context.item.name, "disabled": 0},
-				fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date"],
-				order_by="release_date desc",
-			)
-			
-		context.docs = versions
+	context.docs = frappe.get_all(
+			"File Version",
+			filters={"item": context.item.name, "disabled": 0},
+			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date"],
+			order_by="release_date desc",
+		)
 
 	context.no_cache = 0
 	context.parents = [{"name": _("Home"), "route": "/"}, {"name": _("Download List"), "route": "/download_list"}]

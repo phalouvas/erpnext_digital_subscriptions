@@ -13,6 +13,7 @@
   "element",
   "type",
   "column_break_qv7ij",
+  "is_free",
   "disabled",
   "file",
   "client",
@@ -117,11 +118,17 @@
    "fieldname": "target_platform",
    "fieldtype": "Data",
    "label": "Target Platform"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_free",
+   "fieldtype": "Check",
+   "label": "Is Free"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-02-16 08:59:52.144327",
+ "modified": "2024-02-26 07:33:49.697592",
  "modified_by": "Administrator",
  "module": "Digital Subscriptions",
  "name": "File Version",
