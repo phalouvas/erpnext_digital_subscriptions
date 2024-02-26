@@ -34,5 +34,5 @@ def get_context(context):
 		WHERE TFileVersion.is_free = 1
 	""", as_dict=True)
 
-	context.no_cache = 0
+	context.no_cache = 1
 	context.show_sidebar = True
