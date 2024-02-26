@@ -15,31 +15,32 @@ import urllib.parse
 from frappe.model.document import Document
 
 class FileVersion(Document):
-    def autoname(self):
-        # Get the item_name from item
-        item_name = frappe.get_value("Item", self.item, "item_name")
-        self.name = f"{item_name} v{self.version}"
+	def autoname(self):
+		# Get the item_name from item
+		item_name = frappe.get_value("Item", self.item, "item_name")
+		self.name = f"{item_name} v{self.version}"
 
 @frappe.whitelist(allow_guest=True)
 def download():    
-    
-    subscription = frappe.request.args.get("subscription")
-    if not subscription:
-        frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
-    subscription = frappe.get_doc("File Subscription", subscription)
-    if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
-          frappe.throw("Not allowed", frappe.PermissionError)
+	
+	version = frappe.request.args.get("version")
+	if not version:
+		frappe.throw(_("Version not found"), frappe.DoesNotExistError)
+	version = frappe.get_doc("File Version", version)
+	if version.disabled:
+		frappe.throw(_("Version is disabled"), frappe.PermissionError)
 
-    version = frappe.request.args.get("version")
-    if not version:
-        frappe.throw(_("Version not found"), frappe.DoesNotExistError)
-    version = frappe.get_doc("File Version", version)
-    if version.disabled:
-        frappe.throw(_("Version is disabled"), frappe.PermissionError)
+	if not version.is_free:
+		subscription = frappe.request.args.get("subscription")
+		if not subscription:
+			frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
+		subscription = frappe.get_doc("File Subscription", subscription)
+		if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
+			frappe.throw("Not allowed", frappe.PermissionError)
 
-    response = send_private_file(version.file.split("/private", 1)[1])    
-    return response
-    
+	response = send_private_file(version.file.split("/private", 1)[1])    
+	return response
+	
 def send_private_file(path: str) -> Response:
 	path = os.path.join(frappe.local.conf.get("private_path", "private"), path.strip("/"))
 	filename = os.path.basename(path)

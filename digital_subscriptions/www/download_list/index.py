@@ -19,12 +19,20 @@ def get_context(context):
 	else:
 		customer_name = customer.name
 
-	subscriptions = frappe.get_all(
+	context.paid = frappe.get_all(
 			"File Subscription",
 			filters={"customer": customer_name, "disabled": 0, "ends_on": ['>', frappe.utils.now()]},
 			fields=["name", "item", "item.item_name", "starts_on", "ends_on"]
 		)
 
-	context.docs = subscriptions
+	context.free = frappe.db.sql(f"""
+		SELECT DISTINCT
+			TFileVersion.item AS name,
+			TItem.item_name AS item_name
+		FROM `tabFile Version` AS TFileVersion
+			LEFT JOIN `tabItem` AS TItem ON TFileVersion.item = TItem.name
+		WHERE TFileVersion.is_free = 1
+	""", as_dict=True)
+
 	context.no_cache = 0
 	context.show_sidebar = True
