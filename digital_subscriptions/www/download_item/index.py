@@ -25,7 +25,7 @@ def get_context(context):
 			order_by="release_date desc",
 		)
 
-	context.no_cache = 0
+	context.no_cache = 1
 	context.parents = [{"name": _("Home"), "route": "/"}, {"name": _("Download List"), "route": "/download_list"}]
 
 def is_file_shared(docname):
