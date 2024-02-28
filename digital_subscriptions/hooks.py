@@ -110,7 +110,8 @@ doc_events = {
         "on_submit": "digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.create_file_subscription"
     },
     "Customer": {
-        "validate": "digital_subscriptions.digital_subscriptions.web_form.vies.vies.validate_vies"
+        "validate": "digital_subscriptions.digital_subscriptions.web_form.vies.vies.validate_vies",
+        "before_insert": "digital_subscriptions.digital_subscriptions.hooks.customer.before_insert"
     }
 }
 on_session_creation = "digital_subscriptions.digital_subscriptions.web_form.vies.vies.create_customer_or_supplier"
