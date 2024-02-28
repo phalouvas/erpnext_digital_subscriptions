@@ -59,14 +59,8 @@ def send_private_file(path: str) -> Response:
 
 		response = Response(wrap_file(frappe.local.request.environ, f), direct_passthrough=True)
 
-	# no need for content disposition and force download. let browser handle its opening.
-	# Except for those that can be injected with scripts.
-
-	extension = os.path.splitext(path)[1]
-	blacklist = [".svg", ".html", ".htm", ".xml"]
-
-	if extension.lower() in blacklist:
-		response.headers.add("Content-Disposition", "attachment", filename=filename)
+	# Set the filename for the downloaded file
+	response.headers.add("Content-Disposition", "attachment", filename=filename)
 
 	response.mimetype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
