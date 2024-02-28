@@ -7,17 +7,8 @@ sitemap = 1
 def get_context(context):
 	user = frappe.session.user
 
-	contact_name = frappe.db.get_value("Contact", {"email_id": user})
-	if contact_name:
-		contact = frappe.get_doc("Contact", contact_name)
-		for link in contact.links:
-			if link.link_doctype == "Customer":
-				customer = frappe.get_doc("Customer", link.link_name)
-
-	if not customer:
-		customer_name = ""
-	else:
-		customer_name = customer.name
+	customer_names = frappe.db.get_all("Portal User", filters={"user": user, "parenttype": "Customer"}, fields=["parent"])
+	customer_name = customer_names[0].parent if customer_names else None
 
 	context.paid = frappe.get_all(
 			"File Subscription",
