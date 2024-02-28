@@ -4,7 +4,7 @@ from xml.etree import ElementTree as ET
 from frappe.model.rename_doc import update_document_title, rename_doc
 
 def get_context(context):
-	# do your magic here
+	create_customer_before_vies()
 	pass
 
 def validate_vies(doc, method):
@@ -116,5 +116,70 @@ def create_customer_or_supplier():
 		if not party.customer_primary_contact:
 			party.customer_primary_contact = contact_name
 		party.save(ignore_permissions=True)
+
+	return party
+
+def create_customer_before_vies():
+	"""Based on the default Role (Customer, Supplier), create a Customer / Supplier.
+	Called on_session_creation hook.
+	"""
+	user = frappe.session.user
+
+	if frappe.db.get_value("User", user, "user_type") != "Website User":
+		return
+
+	user_roles = frappe.get_roles()
+	portal_settings = frappe.get_single("Portal Settings")
+	default_role = portal_settings.default_role
+
+	if default_role not in ["Customer"]:
+		return
+
+	# get customer
+	if portal_settings.default_role and portal_settings.default_role in user_roles:
+		doctype = portal_settings.default_role
+	else:
+		doctype = None
+
+	if not doctype:
+		return
+
+	party = None
+	fullname = frappe.utils.get_fullname(user)
+	contact_name = frappe.db.get_value("Contact", {"email_id": user})
+	if contact_name:
+		contact = frappe.get_doc("Contact", contact_name)
+		for link in contact.links:
+			if link.link_doctype == doctype:
+				party = frappe.get_doc(doctype, link.link_name)
+
+	if not contact_name:
+		contact = frappe.new_doc("Contact")
+		contact.first_name = fullname
+		contact.email_id = user
+		contact.user = user
+		contact.is_primary_contact = True
+		contact.append("email_ids", {
+			"email_id": user
+		})
+		contact.save(ignore_permissions=True)
+		frappe.db.commit()
+		contact_name = contact.name
+
+	if not party:
+		party = frappe.new_doc(doctype)
+		party.customer_name = fullname
+		party.customer_primary_contact = contact_name
+		portal_user = frappe.new_doc("Portal User")
+		portal_user.user = user
+		party.append("portal_users", portal_user)
+		party.save(ignore_permissions=True)
+		frappe.db.commit()
+		contact.append("links", {
+			"link_doctype": "Customer",
+			"link_name": party.name,
+		})
+		contact.save(ignore_permissions=True)
+		frappe.db.commit()
 
 	return party
