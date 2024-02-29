@@ -143,8 +143,13 @@ def create_customer_before_vies():
 
 	if not doctype:
 		return
+	
+	customer_names = frappe.db.get_all("Portal User", filters={"user": user, "parenttype": "Customer"}, fields=["parent"])
+	customer_name = customer_names[0].parent if customer_names else None
+	party = frappe.get_doc(doctype, customer_name) if customer_name else None
+	if party:
+		return
 
-	party = None
 	fullname = frappe.utils.get_fullname(user)
 	contact_name = frappe.db.get_value("Contact", {"email_id": user})
 	if contact_name:
