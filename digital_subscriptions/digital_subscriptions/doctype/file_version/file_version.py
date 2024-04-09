@@ -31,12 +31,19 @@ def download():
 		frappe.throw(_("Version is disabled"), frappe.PermissionError)
 
 	if not version.is_free:
+		user = frappe.session.user
+		if not user or user == "Guest":
+			frappe.throw(_("Not allowed"), frappe.PermissionError)
 		subscription = frappe.request.args.get("subscription")
 		if not subscription:
 			frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
 		subscription = frappe.get_doc("File Subscription", subscription)
 		if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
 			frappe.throw("Not allowed", frappe.PermissionError)
+		customer_names = frappe.db.get_all("Portal User", filters={"user": user, "parenttype": "Customer"}, fields=["parent"])
+		customer_name = customer_names[0].parent if customer_names else None
+		if subscription.customer != customer_name:
+			frappe.throw(_("Not allowed"), frappe.PermissionError)
 
 	response = send_private_file(version.file.split("/private", 1)[1])    
 	return response
