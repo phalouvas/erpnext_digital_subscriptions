@@ -5,6 +5,9 @@
 {% endblock %}
 
 {% block page_content %}
+<p class="text-muted small">
+    DLID: <b class="text-warning">{{ subscription.name }}</b>
+</p>
 <div class="row no-gutters">
     {% for doc in docs %}
     <div class="col-sm-12 col-md-5 card border shadow mr-auto mb-4">
