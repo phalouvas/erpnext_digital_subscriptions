@@ -74,7 +74,7 @@ def send_private_file(path: str) -> Response:
 	return response
 
 @frappe.whitelist(allow_guest=True)
-def phrs():
+def xml():
 	subscription = frappe.request.args.get("dlid")
 	if not subscription:
 		frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
