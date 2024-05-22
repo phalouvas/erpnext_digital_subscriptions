@@ -10,7 +10,7 @@ from urllib.parse import quote, unquote
 import mimetypes
 import datetime
 import xml.etree.ElementTree as ET
-import urllib.parse
+import hashlib
 
 from frappe.model.document import Document
 
@@ -19,6 +19,13 @@ class FileVersion(Document):
 		# Get the item_name from item
 		item_name = frappe.get_value("Item", self.item, "item_name")
 		self.name = f"{item_name} v{self.version}"
+
+	def before_save(self):
+		path = self.file.split("/private", 1)[1]
+		path = os.path.join(frappe.local.conf.get("private_path", "private"), path.strip("/"))
+		filepath = frappe.utils.get_site_path(path)
+		with open(filepath, 'rb') as file:
+			self.sha256 = hashlib.sha256(file.read()).hexdigest()
 
 @frappe.whitelist(allow_guest=True)
 def download():    
@@ -86,7 +93,7 @@ def xml():
 	versions = frappe.get_all(
 			"File Version",
 			filters={"item": item.name, "disabled": 0},
-			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date", "element", "type", "client", "target_platform"],
+			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date", "element", "type", "client", "target_platform", "sha256"],
 			order_by="release_date desc",
 		)
 		
@@ -118,6 +125,8 @@ def xml():
 		targetplatform_element = ET.SubElement(update_element, "targetplatform")
 		targetplatform_element.set("name", "joomla")
 		targetplatform_element.set("version", version.target_platform)
+		checksum_element = ET.SubElement(update_element, "sha256")
+		checksum_element.text = version.sha256
 		xml_string += ET.tostring(update_element, encoding="unicode")
 	xml_string += "</updates>"
 
