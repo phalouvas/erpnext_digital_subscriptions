@@ -18,7 +18,7 @@
   "file",
   "client",
   "target_platform",
-  "md5",
+  "sha256",
   "section_break_uojuq",
   "release_type",
   "requirements",
@@ -127,7 +127,7 @@
    "label": "Is Free"
   },
   {
-   "fieldname": "md5",
+   "fieldname": "sha256",
    "fieldtype": "Data",
    "label": "Checksum",
    "read_only": 1
@@ -135,7 +135,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-05-22 07:54:28.772678",
+ "modified": "2024-05-22 08:13:51.481962",
  "modified_by": "Administrator",
  "module": "Digital Subscriptions",
  "name": "File Version",

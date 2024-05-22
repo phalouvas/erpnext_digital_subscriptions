@@ -25,8 +25,7 @@ class FileVersion(Document):
 		path = os.path.join(frappe.local.conf.get("private_path", "private"), path.strip("/"))
 		filepath = frappe.utils.get_site_path(path)
 		with open(filepath, 'rb') as file:
-			data = file.read()
-			self.md5 = hashlib.md5(data).hexdigest()
+			self.sha256 = hashlib.sha256(file.read()).hexdigest()
 
 @frappe.whitelist(allow_guest=True)
 def download():    
@@ -126,6 +125,8 @@ def xml():
 		targetplatform_element = ET.SubElement(update_element, "targetplatform")
 		targetplatform_element.set("name", "joomla")
 		targetplatform_element.set("version", version.target_platform)
+		checksum_element = ET.SubElement(update_element, "sha256")
+		checksum_element.text = version.sha256
 		xml_string += ET.tostring(update_element, encoding="unicode")
 	xml_string += "</updates>"
 
