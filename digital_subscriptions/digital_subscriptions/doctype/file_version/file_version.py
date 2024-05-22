@@ -10,7 +10,7 @@ from urllib.parse import quote, unquote
 import mimetypes
 import datetime
 import xml.etree.ElementTree as ET
-import urllib.parse
+import hashlib
 
 from frappe.model.document import Document
 
@@ -19,6 +19,14 @@ class FileVersion(Document):
 		# Get the item_name from item
 		item_name = frappe.get_value("Item", self.item, "item_name")
 		self.name = f"{item_name} v{self.version}"
+
+	def before_save(self):
+		path = self.file.split("/private", 1)[1]
+		path = os.path.join(frappe.local.conf.get("private_path", "private"), path.strip("/"))
+		filepath = frappe.utils.get_site_path(path)
+		with open(filepath, 'rb') as file:
+			data = file.read()
+			self.md5 = hashlib.md5(data).hexdigest()
 
 @frappe.whitelist(allow_guest=True)
 def download():    
