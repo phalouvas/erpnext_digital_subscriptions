@@ -93,7 +93,7 @@ def xml():
 	versions = frappe.get_all(
 			"File Version",
 			filters={"item": item.name, "disabled": 0},
-			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date", "element", "type", "client", "target_platform"],
+			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date", "element", "type", "client", "target_platform", "sha256"],
 			order_by="release_date desc",
 		)
 		
