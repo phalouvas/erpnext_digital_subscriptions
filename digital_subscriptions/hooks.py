@@ -111,10 +111,11 @@ doc_events = {
     },
     "Customer": {
         "validate": "digital_subscriptions.digital_subscriptions.web_form.vies.vies.validate_vies",
-        "before_insert": "digital_subscriptions.digital_subscriptions.hooks.customer.before_insert"
-    }
+    },
+    "Contact": {
+        "after_insert": "digital_subscriptions.digital_subscriptions.hooks.contact.after_insert",
+    },
 }
-on_session_creation = "digital_subscriptions.digital_subscriptions.web_form.vies.vies.create_customer_or_supplier"
 
 # doc_events = {
 #	"*": {
