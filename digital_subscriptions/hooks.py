@@ -109,9 +109,6 @@ doc_events = {
     "Payment Entry": {
         "on_submit": "digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.create_file_subscription"
     },
-    "Customer": {
-        "validate": "digital_subscriptions.digital_subscriptions.web_form.vies.vies.validate_vies",
-    },
     "Contact": {
         "after_insert": "digital_subscriptions.digital_subscriptions.hooks.contact.after_insert",
     },
