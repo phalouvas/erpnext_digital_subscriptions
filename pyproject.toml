@@ -1,0 +1,22 @@
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "digital_subscriptions"
+authors = [
+    { name = "KAINOTOMO PH LTD", email = "info@kainotomo.com" }
+]
+description = "Sell subscriptions for file download"
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    # frappe is installed via 'bench init'
+]
+
+[project.urls]
+Home = "https://github.com/phalouvas/erpnext_digital_subscriptions"
+
+[tool.bench.dev-dependencies]
+# Development dependencies can be added here if needed
