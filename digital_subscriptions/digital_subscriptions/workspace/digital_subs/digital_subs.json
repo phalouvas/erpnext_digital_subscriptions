@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"hfp9z4W9Py\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">SP Digital Subscriptions</span>\",\"col\":12}},{\"id\":\"spVZ9kPMiA\",\"type\":\"card\",\"data\":{\"card_name\":\"File Management\",\"col\":4}}]",
+ "content": "[{\"id\":\"hfp9z4W9Py\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">SP Digital Subscriptions</span>\",\"col\":12}},{\"id\":\"spVZ9kPMiA\",\"type\":\"card\",\"data\":{\"card_name\":\"File Management\",\"col\":4}},{\"id\":\"VH6tIiK4XE\",\"type\":\"paragraph\",\"data\":{\"text\":\"https://kainotomo.com/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.xml?dlid=&lt;FILE_SUBSCRIPTION_NAME&gt;<br>\",\"col\":12}}]",
  "creation": "2024-02-09 06:33:37.188324",
  "custom_blocks": [],
  "docstatus": 0,
@@ -53,7 +53,7 @@
    "type": "Link"
   }
  ],
- "modified": "2024-02-09 06:38:27.921253",
+ "modified": "2025-11-11 06:50:25.876343",
  "modified_by": "Administrator",
  "module": "Digital Subscriptions",
  "name": "Digital Subs",
@@ -63,7 +63,7 @@
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 28.0,
+ "sequence_id": 7.0,
  "shortcuts": [],
  "title": "Digital Subs"
 }
