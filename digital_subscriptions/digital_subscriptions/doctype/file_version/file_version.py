@@ -41,7 +41,8 @@ def download():
 		user = frappe.session.user
 		if not user or user == "Guest":
 			frappe.throw(_("Not allowed"), frappe.PermissionError)
-		subscription = frappe.request.args.get("subscription")
+		# Accept either 'subscription' or 'dlid' as the subscription identifier
+		subscription = frappe.request.args.get("subscription") or frappe.request.args.get("dlid")
 		if not subscription:
 			frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
 		subscription = frappe.get_doc("File Subscription", subscription)
@@ -82,21 +83,50 @@ def send_private_file(path: str) -> Response:
 
 @frappe.whitelist(allow_guest=True)
 def xml():
-	subscription = frappe.request.args.get("dlid")
-	if not subscription:
+	# dlid can be either a subscription id (paid) or a free token (FREE-<item_code>)
+	dlid = frappe.request.args.get("dlid")
+	if not dlid:
 		frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
-	subscription = frappe.get_doc("File Subscription", subscription)
-	if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
-		frappe.throw("Subscription expired", frappe.PermissionError)
 
-	item = frappe.get_doc("Item", subscription.item)
+	item = None
+	use_free_mode = False
+
+	# First, try resolving dlid as a File Subscription (paid flow)
+	if frappe.db.exists("File Subscription", dlid):
+		subscription = frappe.get_doc("File Subscription", dlid)
+		if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
+			frappe.throw("Subscription expired", frappe.PermissionError)
+		item = frappe.get_doc("Item", subscription.item)
+		free_filter = {}
+		free_dlid_value = dlid  # echo back whatever the client used
+	else:
+		# If not a subscription, check if it's a FREE token of the form FREE-<item_code>
+		if isinstance(dlid, str) and dlid.startswith("FREE-"):
+			item_code = dlid[len("FREE-"):]
+			# item_code in ERPNext is typically the Item's name
+			try:
+				item = frappe.get_doc("Item", item_code)
+			except Exception:
+				item = None
+			if not item:
+				frappe.throw(_("Item not found for free dlid"), frappe.DoesNotExistError)
+			use_free_mode = True
+			free_filter = {"is_free": 1}
+			free_dlid_value = dlid
+		else:
+			# Unknown dlid format
+			frappe.throw(_("Invalid dlid"), frappe.DoesNotExistError)
+
+	# Collect versions for the item; include only free when in free mode
+	filters = {"item": item.name, "disabled": 0}
+	filters.update(free_filter)
 	versions = frappe.get_all(
 			"File Version",
-			filters={"item": item.name, "disabled": 0},
+			filters=filters,
 			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date", "element", "type", "client", "target_platform", "sha256"],
 			order_by="release_date desc",
 		)
-		
+
 	# Convert versions to XML format
 	xml_string = "<updates>"
 	for version in versions:
@@ -117,7 +147,8 @@ def xml():
 		downloadurl_element = ET.SubElement(downloads_element, "downloadurl")
 		downloadurl_element.set("type", "upgrade")
 		downloadurl_element.set("format", "zip")
-		downloadurl_element.text = f"{frappe.utils.get_url()}/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.phrs_download?subscription={subscription.name}{quote('&')}version={quote(version.name)}"
+		# Always emit dlid in the URL to comply with Joomla extensions
+		downloadurl_element.text = f"{frappe.utils.get_url()}/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.phrs_download?dlid={quote(free_dlid_value)}{quote('&')}version={quote(version.name)}"
 		maintainer_element = ET.SubElement(update_element, "maintainer")
 		maintainer_element.text = "KAINOTOMO PH LTD"
 		maintainerurl_element = ET.SubElement(update_element, "maintainerurl")
@@ -141,22 +172,42 @@ def phrs_download():
 	raw_query_string = frappe.request.environ.get('QUERY_STRING', '')
 	decoded_query_string = unquote(raw_query_string)
 	parameters = decoded_query_string.split('&')
+	version = None
+	subscription = None
+	dlid = None
 	for param in parameters:
-		key, value = param.split('=')
+		# split only on the first = to avoid breaking values containing =
+		if '=' not in param:
+			continue
+		key, value = param.split('=', 1)
 		if key == 'version':
 			version = value
 		elif key == 'subscription':
 			subscription = value
+		elif key == 'dlid':
+			dlid = value
 	
 	if not version:
 		frappe.throw(_("Version not found"), frappe.DoesNotExistError)
 	version = frappe.get_doc("File Version", version)
 	if version.disabled:
 		frappe.throw(_("Version is disabled"), frappe.PermissionError)
-	if not subscription:
+
+	# Allow free versions without subscription/dlid
+	if getattr(version, "is_free", 0):
+		response = send_private_file(version.file.split("/private", 1)[1])
+		return response
+
+	# Paid versions require a valid subscription, accept either 'subscription' or 'dlid'
+	subscription_or_dlid = subscription or dlid
+	if not subscription_or_dlid:
 		frappe.throw(_("Subscription not found"), frappe.DoesNotExistError)
-	subscription = frappe.get_doc("File Subscription", subscription)
-	if subscription.ends_on < datetime.datetime.now() or subscription.disabled:
+	# Reject free dlid tokens for paid versions
+	if isinstance(subscription_or_dlid, str) and subscription_or_dlid.startswith("FREE-"):
+		frappe.throw("Not allowed", frappe.PermissionError)
+
+	subscription_doc = frappe.get_doc("File Subscription", subscription_or_dlid)
+	if subscription_doc.ends_on < datetime.datetime.now() or subscription_doc.disabled:
 		frappe.throw("Not allowed", frappe.PermissionError)
 
 	response = send_private_file(version.file.split("/private", 1)[1])    

@@ -12,18 +12,39 @@ def get_context(context):
 		if context.subscription.ends_on < datetime.datetime.now() or context.subscription.disabled:
 			frappe.throw("Not allowed", frappe.PermissionError)
 		context.item = frappe.get_doc("Item", context.subscription.item)
+		context.free_mode = False
 	else:
 		context.item = frappe.get_doc("Item", frappe.form_dict.item)
 		context.subscription = {"name": None}
+		context.free_mode = True
+		# Provide a free dlid token for Joomla-style URLs
+		context.free_dlid = f"FREE-{context.item.name}"
 
 	context.title = context.item.item_name
 
+	filters = {"item": context.item.name, "disabled": 0}
+	if getattr(context, "free_mode", False):
+		# In public (no subscription) view, only list free versions
+		filters["is_free"] = 1
+
 	context.docs = frappe.get_all(
-			"File Version",
-			filters={"item": context.item.name, "disabled": 0},
-			fields=["name", "version", "file", "changelog", "requirements", "release_type", "release_date"],
-			order_by="release_date desc",
-		)
+		"File Version",
+		filters=filters,
+		fields=[
+			"name",
+			"version",
+			"file",
+			"changelog",
+			"requirements",
+			"release_type",
+			"release_date",
+			"is_free",
+		],
+		order_by="release_date desc",
+	)
+
+	# Expose if any free versions available (useful for conditional DLID display)
+	context.has_free = len(context.docs) > 0
 
 	context.no_cache = 1
 	context.parents = [{"name": _("Home"), "route": "/"}, {"name": _("Download List"), "route": "/download_list"}]

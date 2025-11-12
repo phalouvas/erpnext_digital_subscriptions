@@ -6,7 +6,13 @@
 
 {% block page_content %}
 <p class="text-muted small">
+    {% if subscription.name %}
     DLID: <b class="text-warning">{{ subscription.name }}</b>
+    {% elif has_free %}
+    DLID (free): <b class="text-warning">FREE-{{ item.name }}</b>
+    {% else %}
+    DLID: <i class="text-muted">None</i>
+    {% endif %}
 </p>
 <div class="row no-gutters">
     {% for doc in docs %}
@@ -22,7 +28,12 @@
             <p class="card-text">{{ doc.requirements }}</p>
             <h5 class="card-title">Changelog</h5>
             <p class="card-text">{{ doc.changelog }}</p>
+            {% if subscription.name %}
             <a href="/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?subscription={{subscription.name}}&version={{doc.name}}" class="btn btn-primary file-button">{{ _("Download") }}</a>
+            {% else %}
+            <!-- Free versions: no subscription required in portal download -->
+            <a href="/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.download?version={{doc.name}}" class="btn btn-primary file-button">{{ _("Download") }}</a>
+            {% endif %}
         </div>
         <div class="card-footer text-muted">
             Release Date: {{ frappe.utils.formatdate(doc.release_date, "dd-MMM-yyyy") }}
