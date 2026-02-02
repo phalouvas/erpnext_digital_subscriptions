@@ -1,21 +1,61 @@
 import frappe
 import erpnext.portal.utils
 
-# Store the original function before we override it
-original_create_customer_or_supplier = erpnext.portal.utils.create_customer_or_supplier
-
 def create_customer_or_supplier():
     """Custom implementation that overrides the original function."""
-    
-    # Call the original function implementation directly (not through the module)
-    party = original_create_customer_or_supplier()
-    
-    if party and party.doctype == "Customer":
-        user = frappe.session.user
-        fullname = frappe.utils.get_fullname(user)
-        party.customer_name = fullname
-        frappe.db.set_value("Customer", party.name, "customer_name", fullname)
-    
+    user = frappe.session.user
+
+    if frappe.db.get_value("User", user, "user_type") != "Website User":
+        return
+
+    user_roles = frappe.get_roles()
+    portal_settings = frappe.get_single("Portal Settings")
+    default_role = portal_settings.default_role
+
+    if default_role not in ["Customer", "Supplier"]:
+        return
+
+    # create customer / supplier if the user has that role
+    if portal_settings.default_role and portal_settings.default_role in user_roles:
+        doctype = portal_settings.default_role
+    else:
+        doctype = None
+
+    if not doctype:
+        return
+
+    if erpnext.portal.utils.party_exists(doctype, user):
+        return
+
+    party = frappe.new_doc(doctype)
+    fullname = frappe.utils.get_fullname(user)
+
+    if doctype == "Customer":
+        party.update(
+            {
+                "customer_name": fullname,
+            }
+        )
+    else:
+        party.update(
+            {
+                "supplier_name": fullname,
+                "supplier_group": "All Supplier Groups",
+                "supplier_type": "Individual",
+            }
+        )
+
+    party.flags.ignore_mandatory = True
+    party.insert(ignore_permissions=True)
+
+    alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
+
+    if erpnext.portal.utils.party_exists(alternate_doctype, user):
+        # if user is both customer and supplier, alter fullname to avoid contact name duplication
+        fullname += "-" + doctype
+
+    create_party_contact(doctype, fullname, user, party.name)
+
     return party
 
 def create_party_contact(doctype, fullname, user, party_name):
