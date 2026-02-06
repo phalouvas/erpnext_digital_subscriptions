@@ -62,17 +62,15 @@ def create_party_contact(doctype, fullname, user, party_name):
     """
     Link existing Contact (created by Frappe) to Customer/Supplier.
     Waits for Frappe's background job to create the Contact before linking.
+    Does not create Contacts - relies on Frappe's background job to avoid race conditions.
     """
     import time
     
-    max_retries = 6
-    retry_delay = 0.4  # 400ms
+    max_retries = 10  # Increased from 6 to allow more time for background job
+    retry_delay = 0.5  # 500ms - slightly longer delay
     
     for attempt in range(max_retries):
         try:
-            # Commit transaction to see changes from other processes
-            frappe.db.commit()
-            
             # Check if contact exists (created by Frappe's background job)
             contact_name = frappe.db.get_value("Contact", {"email_id": user})
             
@@ -106,25 +104,15 @@ def create_party_contact(doctype, fullname, user, party_name):
                     time.sleep(retry_delay)
                     continue
                 else:
-                    # After all retries, create it ourselves as fallback
+                    # Contact not found after all retries
+                    # Log this for monitoring, but don't create manually to avoid race conditions
                     frappe.log_error(
-                        f"Contact not found for {user} after {max_retries} attempts. Creating manually.",
-                        "Contact Creation Fallback"
+                        f"Contact not found for {user} after {max_retries} attempts ({max_retries * retry_delay}s). "
+                        f"Frappe's background job should create it. "
+                        f"Party: {doctype} '{party_name}' created without linked Contact.",
+                        "Contact Not Found After Retries"
                     )
-                    contact = frappe.new_doc("Contact")
-                    contact.update({"first_name": fullname, "email_id": user})
-                    contact.append("links", dict(link_doctype=doctype, link_name=party_name))
-                    contact.append("email_ids", dict(email_id=user, is_primary=True))
-                    contact.flags.ignore_mandatory = True
-                    contact.insert(ignore_permissions=True)
-                    
-                    # Set as primary contact on Customer
-                    if doctype == "Customer":
-                        party = frappe.get_doc("Customer", party_name)
-                        if not party.customer_primary_contact:
-                            party.db_set("customer_primary_contact", contact.name)
-                    
-                    return contact
+                    return None
                     
         except frappe.QueryDeadlockError:
             # Deadlock occurred, rollback and retry
@@ -134,8 +122,9 @@ def create_party_contact(doctype, fullname, user, party_name):
                 continue
             else:
                 frappe.log_error(
-                    f"Deadlock creating/linking contact for {user} after {max_retries} attempts",
-                    "Contact Deadlock Error"
+                    f"Deadlock linking contact for {user} after {max_retries} attempts. "
+                    f"Party: {doctype} '{party_name}'",
+                    "Contact Link Deadlock Error"
                 )
                 return None
                 
@@ -147,8 +136,9 @@ def create_party_contact(doctype, fullname, user, party_name):
                 continue
             else:
                 frappe.log_error(
-                    f"Conflict creating/linking contact for {user}",
-                    "Contact Creation Conflict"
+                    f"Conflict linking contact for {user}. "
+                    f"Party: {doctype} '{party_name}'",
+                    "Contact Link Conflict"
                 )
                 return None
                 
@@ -156,7 +146,7 @@ def create_party_contact(doctype, fullname, user, party_name):
             # Unexpected error, log and return None for graceful degradation
             frappe.log_error(
                 f"Error in create_party_contact for {user}: {str(e)}\n{frappe.get_traceback()}",
-                "Contact Creation Error"
+                "Contact Link Error"
             )
             return None
     
