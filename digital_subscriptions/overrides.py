@@ -1,6 +1,10 @@
 import frappe
 import erpnext.portal.utils
 
+from erpnext.selling.doctype.customer.customer import Customer as ERPNextCustomer
+
+_original_create_primary_contact = ERPNextCustomer.create_primary_contact
+
 def create_customer_or_supplier():
     """Custom implementation that overrides the original function."""
     user = frappe.session.user
@@ -151,3 +155,30 @@ def create_party_contact(doctype, fullname, user, party_name):
             return None
     
     return None
+
+
+def create_primary_contact(self):
+    # TODO(phalouvas): Remove once Webshop fixes login-time Contact permission error.
+    # See https://github.com/frappe/webshop/issues/350
+    if not self.customer_primary_contact and not self.lead_name:
+        return _original_create_primary_contact(self)
+
+    if not self.customer_primary_contact:
+        return
+
+    user_type = None
+    if getattr(frappe, "session", None) and frappe.session.user:
+        user_type = frappe.db.get_value("User", frappe.session.user, "user_type")
+
+    if user_type == "Website User":
+        # Avoid permission error during portal login/session creation.
+        frappe.db.set_value(
+            "Contact",
+            self.customer_primary_contact,
+            "is_primary_contact",
+            1,
+            update_modified=False,
+        )
+        return
+
+    frappe.set_value("Contact", self.customer_primary_contact, "is_primary_contact", 1)
