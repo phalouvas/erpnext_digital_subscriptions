@@ -1,4 +1,4 @@
-__version__ = '16.0.1'
+__version__ = '16.0.2'
 
 import frappe
 from digital_subscriptions.overrides import create_customer_or_supplier
