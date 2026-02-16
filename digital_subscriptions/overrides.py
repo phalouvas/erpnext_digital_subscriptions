@@ -1,9 +1,44 @@
 import frappe
 import erpnext.portal.utils
+import time
 
 from erpnext.selling.doctype.customer.customer import Customer as ERPNextCustomer
 
+logger = frappe.logger("digital_subscriptions")
+
 _original_create_primary_contact = ERPNextCustomer.create_primary_contact
+
+
+def _acquire_lock(lock_key, timeout=30):
+    """
+    Acquire distributed lock using frappe.cache().
+    Returns True if lock acquired, False otherwise.
+    """
+    try:
+        # nx=True means set only if not exists, ex=timeout sets expiry in seconds
+        return frappe.cache().set(lock_key, "1", ex=timeout, nx=True)
+    except Exception:
+        # If cache doesn't support nx parameter, fall back to simpler locking
+        try:
+            if frappe.cache().get(lock_key):
+                return False
+            frappe.cache().set(lock_key, "1", ex=timeout)
+            return True
+        except Exception:
+            # Last resort: log and proceed without locking
+            frappe.log_error(
+                f"Cache locking failed for key {lock_key}",
+                "Digital Subscriptions Lock Error"
+            )
+            return True  # Proceed anyway to avoid blocking
+
+
+def _release_lock(lock_key):
+    """Release distributed lock."""
+    try:
+        frappe.cache().delete(lock_key)
+    except Exception:
+        pass
 
 def create_customer_or_supplier():
     """Custom implementation that overrides the original function."""
@@ -28,39 +63,83 @@ def create_customer_or_supplier():
     if not doctype:
         return
 
-    if erpnext.portal.utils.party_exists(doctype, user):
-        return
-
-    party = frappe.new_doc(doctype)
-    fullname = frappe.utils.get_fullname(user)
-
+    # For Customer, try to use webshop's centralized service if available
     if doctype == "Customer":
-        party.update(
-            {
-                "customer_name": fullname,
-            }
-        )
-    else:
-        party.update(
-            {
-                "supplier_name": fullname,
-                "supplier_group": "All Supplier Groups",
-                "supplier_type": "Individual",
-            }
-        )
+        try:
+            from webshop.webshop.utils.customer_service import get_or_create_customer_for_user
+            customer = get_or_create_customer_for_user(user=user)
+            if customer:
+                logger.info(f"Customer created via webshop service for user {user}: {customer.name}")
+                return customer
+        except ImportError:
+            # webshop not installed, fall through to original logic
+            logger.debug("Webshop not installed, using fallback customer creation")
+            pass
+        except Exception as e:
+            # Log error but continue with fallback
+            frappe.log_error(
+                f"Error calling webshop customer service: {str(e)}",
+                "Customer Service Fallback"
+            )
 
-    party.flags.ignore_mandatory = True
-    party.insert(ignore_permissions=True)
+    # Acquire distributed lock for this user and doctype to prevent concurrent creation
+    lock_key = f"party_creation_lock:{user}:{doctype}"
+    if not _acquire_lock(lock_key):
+        # Wait briefly and check if party was created by another process
+        time.sleep(0.5)
+        if erpnext.portal.utils.party_exists(doctype, user):
+            # Party exists now, return None (original function returns None when party exists)
+            return
+        # Try one more time to acquire lock
+        time.sleep(0.5)
+        if not _acquire_lock(lock_key):
+            # Could not acquire lock, log and return to avoid blocking
+            frappe.log_error(
+                f"Could not acquire lock for {doctype} creation for user {user}",
+                "Party Creation Lock Error"
+            )
+            return
 
-    alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
+    logger.info(f"Creating {doctype} for user {user}")
+    try:
+        # Double-check after acquiring lock
+        if erpnext.portal.utils.party_exists(doctype, user):
+            logger.info(f"{doctype} already exists for user {user}")
+            return
 
-    if erpnext.portal.utils.party_exists(alternate_doctype, user):
-        # if user is both customer and supplier, alter fullname to avoid contact name duplication
-        fullname += "-" + doctype
+        party = frappe.new_doc(doctype)
+        fullname = frappe.utils.get_fullname(user)
 
-    create_party_contact(doctype, fullname, user, party.name)
+        if doctype == "Customer":
+            party.update(
+                {
+                    "customer_name": fullname,
+                }
+            )
+        else:
+            party.update(
+                {
+                    "supplier_name": fullname,
+                    "supplier_group": "All Supplier Groups",
+                    "supplier_type": "Individual",
+                }
+            )
 
-    return party
+        party.flags.ignore_mandatory = True
+        party.insert(ignore_permissions=True)
+        logger.info(f"{doctype} created: {party.name} for user {user}")
+
+        alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
+
+        if erpnext.portal.utils.party_exists(alternate_doctype, user):
+            # if user is both customer and supplier, alter fullname to avoid contact name duplication
+            fullname += "-" + doctype
+
+        create_party_contact(doctype, fullname, user, party.name)
+
+        return party
+    finally:
+        _release_lock(lock_key)
 
 def create_party_contact(doctype, fullname, user, party_name):
     """
