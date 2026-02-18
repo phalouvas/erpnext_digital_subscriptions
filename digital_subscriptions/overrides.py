@@ -1,6 +1,7 @@
 import frappe
 import erpnext.portal.utils
 import time
+import random
 
 from erpnext.selling.doctype.customer.customer import Customer as ERPNextCustomer
 
@@ -107,34 +108,35 @@ def create_customer_or_supplier():
             logger.info(f"{doctype} already exists for user {user}")
             return
 
+        # Get and validate fullname
+        fullname = frappe.utils.get_fullname(user).strip()
+        if not fullname:
+            # Fallback to email username if name is empty
+            fullname = user.split('@')[0]
+            logger.warning(f"Empty name for user {user}, using '{fullname}'")
+        
+        # Check for alternate party BEFORE creating this one
+        alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
+        if erpnext.portal.utils.party_exists(alternate_doctype, user):
+            # User has both roles, add suffix to avoid confusion
+            fullname += "-" + doctype
+        
+        # Create party with final name (including suffix if needed)
         party = frappe.new_doc(doctype)
-        fullname = frappe.utils.get_fullname(user)
-
         if doctype == "Customer":
-            party.update(
-                {
-                    "customer_name": fullname,
-                }
-            )
+            party.update({"customer_name": fullname})
         else:
-            party.update(
-                {
-                    "supplier_name": fullname,
-                    "supplier_group": "All Supplier Groups",
-                    "supplier_type": "Individual",
-                }
-            )
+            party.update({
+                "supplier_name": fullname,
+                "supplier_group": "All Supplier Groups",
+                "supplier_type": "Individual",
+            })
 
         party.flags.ignore_mandatory = True
         party.insert(ignore_permissions=True)
-        logger.info(f"{doctype} created: {party.name} for user {user}")
+        logger.info(f"{doctype} created: {party.name} ('{fullname}') for user {user}")
 
-        alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
-
-        if erpnext.portal.utils.party_exists(alternate_doctype, user):
-            # if user is both customer and supplier, alter fullname to avoid contact name duplication
-            fullname += "-" + doctype
-
+        # Link contact (passive - waits for Frappe's background job)
         create_party_contact(doctype, fullname, user, party.name)
 
         return party
@@ -143,14 +145,12 @@ def create_customer_or_supplier():
 
 def create_party_contact(doctype, fullname, user, party_name):
     """
-    Link existing Contact (created by Frappe) to Customer/Supplier.
+    PASSIVE: Link existing Contact (created by Frappe) to Customer/Supplier.
     Waits for Frappe's background job to create the Contact before linking.
     Does not create Contacts - relies on Frappe's background job to avoid race conditions.
     """
-    import time
-    
-    max_retries = 10  # Increased from 6 to allow more time for background job
-    retry_delay = 0.5  # 500ms - slightly longer delay
+    max_retries = 20  # Increased to match webshop (allow more time for background job)
+    base_delay = 0.5  # Starting delay in seconds
     
     for attempt in range(max_retries):
         try:
@@ -183,14 +183,15 @@ def create_party_contact(doctype, fullname, user, party_name):
             else:
                 # Contact doesn't exist yet
                 if attempt < max_retries - 1:
-                    # Wait for Frappe's background job to create it
-                    time.sleep(retry_delay)
+                    # Wait for Frappe's background job with exponential backoff + jitter
+                    delay = base_delay * (2 ** attempt) * (0.8 + 0.4 * random.random())
+                    time.sleep(delay)
                     continue
                 else:
                     # Contact not found after all retries
                     # Log this for monitoring, but don't create manually to avoid race conditions
                     frappe.log_error(
-                        f"Contact not found for {user} after {max_retries} attempts ({max_retries * retry_delay}s). "
+                        f"Contact not found for {user} after {max_retries} attempts. "
                         f"Frappe's background job should create it. "
                         f"Party: {doctype} '{party_name}' created without linked Contact.",
                         "Contact Not Found After Retries"
@@ -201,7 +202,7 @@ def create_party_contact(doctype, fullname, user, party_name):
             # Deadlock occurred, rollback and retry
             frappe.db.rollback()
             if attempt < max_retries - 1:
-                time.sleep(retry_delay * (attempt + 1))  # Exponential backoff
+                time.sleep(base_delay * (2 ** attempt))  # Exponential backoff
                 continue
             else:
                 frappe.log_error(
@@ -215,7 +216,7 @@ def create_party_contact(doctype, fullname, user, party_name):
             # Contact was created/modified by another process
             frappe.db.rollback()
             if attempt < max_retries - 1:
-                time.sleep(retry_delay)
+                time.sleep(base_delay)
                 continue
             else:
                 frappe.log_error(
