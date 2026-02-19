@@ -1,7 +1,6 @@
 import frappe
 import erpnext.portal.utils
 import time
-import random
 
 from erpnext.selling.doctype.customer.customer import Customer as ERPNextCustomer
 
@@ -41,14 +40,57 @@ def _release_lock(lock_key):
     except Exception:
         pass
 
-def create_customer_or_supplier():
+
+def _resolve_user(user=None):
+    if user:
+        return user
+
+    session = getattr(frappe, "session", None)
+    session_user = getattr(session, "user", None)
+    if session_user and session_user != "Guest":
+        return session_user
+
+    return None
+
+
+def _get_existing_party_for_user(doctype, user):
+    if not user:
+        return None
+
+    party_name = frappe.db.get_value(
+        "Portal User",
+        {"parenttype": doctype, "user": user},
+        "parent",
+    )
+    if party_name and frappe.db.exists(doctype, party_name):
+        return frappe.get_doc(doctype, party_name)
+
+    contact_name = frappe.db.get_value("Contact", {"email_id": user})
+    if not contact_name:
+        return None
+
+    try:
+        contact = frappe.get_doc("Contact", contact_name)
+    except frappe.DoesNotExistError:
+        return None
+
+    for link in contact.links:
+        if link.link_doctype == doctype and frappe.db.exists(doctype, link.link_name):
+            return frappe.get_doc(doctype, link.link_name)
+
+    return None
+
+
+def create_customer_or_supplier(user=None):
     """Custom implementation that overrides the original function."""
-    user = frappe.session.user
+    user = _resolve_user(user)
+    if not user:
+        return
 
     if frappe.db.get_value("User", user, "user_type") != "Website User":
         return
 
-    user_roles = frappe.get_roles()
+    user_roles = frappe.get_roles(user)
     portal_settings = frappe.get_single("Portal Settings")
     default_role = portal_settings.default_role
 
@@ -64,24 +106,9 @@ def create_customer_or_supplier():
     if not doctype:
         return
 
-    # For Customer, try to use webshop's centralized service if available
-    if doctype == "Customer":
-        try:
-            from webshop.webshop.utils.customer_service import get_or_create_customer_for_user
-            customer = get_or_create_customer_for_user(user=user)
-            if customer:
-                logger.info(f"Customer created via webshop service for user {user}: {customer.name}")
-                return customer
-        except ImportError:
-            # webshop not installed, fall through to original logic
-            logger.debug("Webshop not installed, using fallback customer creation")
-            pass
-        except Exception as e:
-            # Log error but continue with fallback
-            frappe.log_error(
-                f"Error calling webshop customer service: {str(e)}",
-                "Customer Service Fallback"
-            )
+    existing_party = _get_existing_party_for_user(doctype, user)
+    if existing_party:
+        return existing_party
 
     # Acquire distributed lock for this user and doctype to prevent concurrent creation
     lock_key = f"party_creation_lock:{user}:{doctype}"
@@ -104,9 +131,10 @@ def create_customer_or_supplier():
     logger.info(f"Creating {doctype} for user {user}")
     try:
         # Double-check after acquiring lock
-        if erpnext.portal.utils.party_exists(doctype, user):
-            logger.info(f"{doctype} already exists for user {user}")
-            return
+        existing_party = _get_existing_party_for_user(doctype, user)
+        if existing_party:
+            logger.info(f"{doctype} already exists for user {user}: {existing_party.name}")
+            return existing_party
 
         # Get and validate fullname
         fullname = frappe.utils.get_fullname(user).strip()
@@ -117,7 +145,7 @@ def create_customer_or_supplier():
         
         # Check for alternate party BEFORE creating this one
         alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
-        if erpnext.portal.utils.party_exists(alternate_doctype, user):
+        if _get_existing_party_for_user(alternate_doctype, user):
             # User has both roles, add suffix to avoid confusion
             fullname += "-" + doctype
         
@@ -132,7 +160,9 @@ def create_customer_or_supplier():
                 "supplier_type": "Individual",
             })
 
+        party.append("portal_users", {"user": user})
         party.flags.ignore_mandatory = True
+        party.flags.ignore_links = True
         party.insert(ignore_permissions=True)
         logger.info(f"{doctype} created: {party.name} ('{fullname}') for user {user}")
 
@@ -140,6 +170,12 @@ def create_customer_or_supplier():
         create_party_contact(doctype, fullname, user, party.name)
 
         return party
+    except frappe.DuplicateEntryError:
+        frappe.db.rollback()
+        existing_party = _get_existing_party_for_user(doctype, user)
+        if existing_party:
+            return existing_party
+        raise
     finally:
         _release_lock(lock_key)
 
@@ -149,8 +185,8 @@ def create_party_contact(doctype, fullname, user, party_name):
     Waits for Frappe's background job to create the Contact before linking.
     Does not create Contacts - relies on Frappe's background job to avoid race conditions.
     """
-    max_retries = 20  # Increased to match webshop (allow more time for background job)
-    base_delay = 0.5  # Starting delay in seconds
+    max_retries = 8
+    base_delay = 0.2
     
     for attempt in range(max_retries):
         try:
@@ -171,6 +207,8 @@ def create_party_contact(doctype, fullname, user, party_name):
                 # Add the link if it doesn't exist
                 if not link_exists:
                     contact.append("links", dict(link_doctype=doctype, link_name=party_name))
+                    contact.flags.ignore_links = True
+                    contact.flags.ignore_mandatory = True
                     contact.save(ignore_permissions=True)
                 
                 # Set as primary contact on Customer
@@ -183,8 +221,8 @@ def create_party_contact(doctype, fullname, user, party_name):
             else:
                 # Contact doesn't exist yet
                 if attempt < max_retries - 1:
-                    # Wait for Frappe's background job with exponential backoff + jitter
-                    delay = base_delay * (2 ** attempt) * (0.8 + 0.4 * random.random())
+                    # Wait for Frappe's background job with bounded exponential backoff
+                    delay = min(base_delay * (2 ** attempt), 1.6)
                     time.sleep(delay)
                     continue
                 else:
@@ -202,7 +240,7 @@ def create_party_contact(doctype, fullname, user, party_name):
             # Deadlock occurred, rollback and retry
             frappe.db.rollback()
             if attempt < max_retries - 1:
-                time.sleep(base_delay * (2 ** attempt))  # Exponential backoff
+                time.sleep(min(base_delay * (2 ** attempt), 1.6))
                 continue
             else:
                 frappe.log_error(
