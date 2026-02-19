@@ -1,5 +1,4 @@
 import frappe
-import erpnext.portal.utils
 import time
 
 from erpnext.selling.doctype.customer.customer import Customer as ERPNextCustomer
@@ -115,9 +114,9 @@ def create_customer_or_supplier(user=None):
     if not _acquire_lock(lock_key):
         # Wait briefly and check if party was created by another process
         time.sleep(0.5)
-        if erpnext.portal.utils.party_exists(doctype, user):
-            # Party exists now, return None (original function returns None when party exists)
-            return
+        existing_party = _get_existing_party_for_user(doctype, user)
+        if existing_party:
+            return existing_party
         # Try one more time to acquire lock
         time.sleep(0.5)
         if not _acquire_lock(lock_key):
