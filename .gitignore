@@ -18,3 +18,4 @@ __pycache__
 .idea/
 node_modules/
 .backportrc.json
+.venv
