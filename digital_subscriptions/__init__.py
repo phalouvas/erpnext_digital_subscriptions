@@ -1,4 +1,4 @@
-__version__ = '16.1.0'
+__version__ = '16.1.1'
 
 import frappe
 import frappe.core.doctype.user.user as frappe_user
@@ -25,6 +25,7 @@ _ORIGINAL_PORTAL_CREATE_CUSTOMER_OR_SUPPLIER = getattr(
     erpnext_portal_utils, "create_customer_or_supplier", None
 )
 _ORIGINAL_PORTAL_CREATE_PARTY_CONTACT = getattr(erpnext_portal_utils, "create_party_contact", None)
+_ORIGINAL_WEBSHOP_GET_PARTY = None
 
 
 def create_contact(user, ignore_links=False, ignore_mandatory=False):
@@ -58,8 +59,6 @@ def create_contact(user, ignore_links=False, ignore_mandatory=False):
             _coordinated_contact_operation,
             fallback=lambda: _get_contact_by_email(email),
         )
-        if contact_name:
-            _link_contact_to_party_safely(contact_name, "User", user_doc.name)
         _increment_contact_metric("coordinated")
         return None
     except frappe.QueryDeadlockError:
@@ -142,6 +141,76 @@ try:
     )
     logger.info(
         "Monkey-patched webshop.update_debtors_account to use digital_subscriptions"
+    )
+except ImportError:
+    pass
+
+
+try:
+    import webshop.webshop.shopping_cart.cart as webshop_cart
+    from webshop.webshop.utils.customer_service import get_or_create_customer_for_user
+
+    _ORIGINAL_WEBSHOP_GET_PARTY = getattr(webshop_cart, "get_party", None)
+
+    def patched_get_party(user=None):
+        party = _ORIGINAL_WEBSHOP_GET_PARTY(user=user) if _ORIGINAL_WEBSHOP_GET_PARTY else None
+        if party and getattr(party, "doctype", None) == "Customer":
+            return party
+
+        resolved_user = user or getattr(getattr(frappe, "session", None), "user", None)
+        if not resolved_user or resolved_user == "Guest":
+            return None
+
+        cart_settings = frappe.get_cached_doc("Webshop Settings")
+        customer = get_or_create_customer_for_user(
+            user=resolved_user,
+            cart_settings=cart_settings,
+        )
+
+        if customer:
+            logger.info("Recovered missing webshop party for %s via customer_service", resolved_user)
+            return customer
+
+        # Fallback: force customer creation so checkout cannot proceed with empty customer.
+        party = create_customer_or_supplier(user=resolved_user)
+        if party and getattr(party, "doctype", None) == "Customer":
+            logger.info("Recovered missing webshop party for %s via digital_subscriptions", resolved_user)
+            return party
+
+        from frappe.utils import get_fullname
+        from frappe.utils.nestedset import get_root_of
+
+        fullname = (get_fullname(resolved_user) or resolved_user.split("@")[0]).strip()
+        customer = frappe.new_doc("Customer")
+        customer.update(
+            {
+                "customer_name": fullname,
+                "customer_type": "Individual",
+                "customer_group": cart_settings.default_customer_group,
+                "territory": get_root_of("Territory"),
+            }
+        )
+        customer.append("portal_users", {"user": resolved_user})
+        customer.flags.ignore_mandatory = True
+        customer.flags.ignore_links = True
+        customer.insert(ignore_permissions=True)
+
+        contact_name = _get_contact_by_email(resolved_user)
+        if not contact_name:
+            user_doc = frappe.get_doc("User", resolved_user)
+            contact_name = _create_contact_safely(user_doc, ignore_links=True, ignore_mandatory=True)
+        _link_contact_to_party_safely(contact_name, "Customer", customer.name)
+
+        logger.warning("Force-created checkout customer %s for user %s", customer.name, resolved_user)
+
+        return customer
+
+    _apply_patch(
+        webshop_cart,
+        "get_party",
+        patched_get_party,
+        ("user",),
+        _ORIGINAL_WEBSHOP_GET_PARTY,
     )
 except ImportError:
     pass
