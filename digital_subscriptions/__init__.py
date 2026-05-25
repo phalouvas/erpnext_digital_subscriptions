@@ -1,4 +1,4 @@
-__version__ = '16.1.2'
+__version__ = '16.2.0'
 
 import frappe
 import frappe.core.doctype.user.user as frappe_user

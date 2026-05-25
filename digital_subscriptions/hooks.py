@@ -107,7 +107,10 @@ has_website_permission = {
 
 doc_events = {
     "Payment Entry": {
-        "on_submit": "digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.create_file_subscription"
+        "on_submit": [
+            "digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.create_file_subscription",
+            "digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.create_license_keys"
+        ]
     }
 }
 

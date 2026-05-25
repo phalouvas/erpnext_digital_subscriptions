@@ -70,6 +70,9 @@ class TestFileSubscription(FrappeTestCase):
 		), patch(
 			"digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.frappe.utils.add_days",
 			return_value=ends_on,
+		), patch(
+			"digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.frappe.get_single",
+			return_value=frappe._dict(days=365),
 		):
 			create_file_subscription(payment_entry, method="on_submit")
 
@@ -114,6 +117,9 @@ class TestFileSubscription(FrappeTestCase):
 		), patch(
 			"digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.frappe.new_doc",
 			side_effect=fake_new_doc,
+		), patch(
+			"digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.frappe.get_single",
+			return_value=frappe._dict(days=365),
 		):
 			create_file_subscription(payment_entry, method="on_submit")
 
@@ -135,5 +141,8 @@ class TestFileSubscription(FrappeTestCase):
 		), patch(
 			"digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.frappe.new_doc",
 			side_effect=AssertionError("new_doc should not be called for existing subscriptions"),
+		), patch(
+			"digital_subscriptions.digital_subscriptions.doctype.file_subscription.file_subscription.frappe.get_single",
+			return_value=frappe._dict(days=365),
 		):
 			create_file_subscription(payment_entry, method="on_submit")
