@@ -27,7 +27,8 @@
    "in_list_view": 1,
    "label": "Customer",
    "options": "Customer",
-   "reqd": 1
+    "reqd": 1,
+    "set_only_once": 1
   },
   {
    "fieldname": "item",
@@ -35,7 +36,8 @@
    "in_list_view": 1,
    "label": "Item",
    "options": "Item",
-   "reqd": 1
+    "reqd": 1,
+    "set_only_once": 1
   },
   {
    "fieldname": "payment_entry",
@@ -70,26 +72,30 @@
   {
    "fieldname": "license_key",
    "fieldtype": "Small Text",
-   "label": "License Key"
+    "label": "License Key",
+    "set_only_once": 1
   },
   {
    "default": "-1",
    "fieldname": "max_tenants",
    "fieldtype": "Int",
    "label": "Max Tenants (-1 for unlimited)",
-   "reqd": 1
+    "reqd": 1,
+    "set_only_once": 1
   },
   {
    "fieldname": "expiry_date",
    "fieldtype": "Datetime",
    "in_list_view": 1,
-   "label": "Expiry Date"
+    "label": "Expiry Date",
+    "set_only_once": 1
   },
   {
    "fieldname": "issued_on",
    "fieldtype": "Datetime",
    "in_list_view": 1,
-   "label": "Issued On"
+    "label": "Issued On",
+    "set_only_once": 1
   }
  ],
  "links": [],
