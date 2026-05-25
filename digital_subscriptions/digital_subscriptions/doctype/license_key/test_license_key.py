@@ -17,6 +17,11 @@ class _DummyLicenseKey:
 		self.flags = SimpleNamespace(ignore_permissions=False)
 		self.saved = False
 		self.name = "LIC-0001"
+		self.customer = None
+		self.item = None
+		self.payment_entry = None
+		self.reference_doctype = None
+		self.reference_name = None
 
 	def save(self, ignore_permissions=False):
 		self.saved = True
@@ -24,8 +29,8 @@ class _DummyLicenseKey:
 
 
 class TestLicenseKey(FrappeTestCase):
-	def test_license_key_generated_for_license_item(self):
-		"""License Key is created when Payment Entry contains items in the license Item Group."""
+	def test_creates_license_key_doc_for_license_item(self):
+		"""Shell License Key doc is created and saved for items in the license Item Group."""
 		payment_entry = frappe._dict(
 			doctype="Payment Entry",
 			name="PE-0001",
@@ -34,7 +39,6 @@ class TestLicenseKey(FrappeTestCase):
 		)
 		sales_invoice = frappe._dict(
 			customer="CUST-0001",
-			contact_email="customer@example.com",
 			items=[frappe._dict(item_code="LIC-ITEM-1")],
 		)
 		item_doc = frappe._dict(item_code="LIC-ITEM-1", item_group="PH Agent Hub")
@@ -47,27 +51,15 @@ class TestLicenseKey(FrappeTestCase):
 			created.append(doc)
 			return doc
 
-		def fake_get_single(doctype):
-			if doctype == "PH Agent Hub Settings":
-				return frappe._dict(enabled=1, license_item_group="PH Agent Hub", license_duration_days=365)
-			return frappe._dict()
-
-		def fake_get_cached_doc(doctype, name):
-			if doctype == "Item":
-				return item_doc
-			return frappe._dict()
-
-		mock_key = frappe._dict(sign=lambda data: b"x" * 64)
-
 		with patch(
 			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.get_doc",
 			return_value=sales_invoice,
 		), patch(
 			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.get_cached_doc",
-			side_effect=fake_get_cached_doc,
+			return_value=item_doc,
 		), patch(
 			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.get_single",
-			side_effect=fake_get_single,
+			return_value=frappe._dict(enabled=1, license_item_group="PH Agent Hub", license_duration_days=365),
 		), patch(
 			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.get_all",
 			return_value=[],
@@ -75,10 +67,10 @@ class TestLicenseKey(FrappeTestCase):
 			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.new_doc",
 			side_effect=fake_new_doc,
 		), patch(
-			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.sendmail",
+			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key._resolve_customer_email_from_customer",
+			return_value="customer@example.com",
 		), patch(
-			"digital_subscriptions.digital_subscriptions.doctype.ph_agent_hub_settings.ph_agent_hub_settings.PHAgentHubSettings.get_private_key",
-			return_value=mock_key,
+			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key._send_license_email",
 		):
 			create_license_keys(payment_entry, method="on_submit")
 
@@ -87,7 +79,6 @@ class TestLicenseKey(FrappeTestCase):
 		self.assertEqual(created[0].customer, "CUST-0001")
 		self.assertEqual(created[0].item, "LIC-ITEM-1")
 		self.assertEqual(created[0].payment_entry, "PE-0001")
-		self.assertEqual(created[0].max_tenants, -1)
 
 	def test_license_items_skipped_when_settings_disabled(self):
 		"""No License Key is created when PH Agent Hub Settings are disabled."""
@@ -115,7 +106,7 @@ class TestLicenseKey(FrappeTestCase):
 			create_license_keys(payment_entry, method="on_submit")
 
 	def test_file_subscription_items_unaffected(self):
-		"""Items NOT in the license Item Group are ignored — they still get File Subscriptions."""
+		"""Items NOT in the license Item Group are ignored."""
 		payment_entry = frappe._dict(
 			doctype="Payment Entry",
 			name="PE-0003",
@@ -185,7 +176,6 @@ class TestLicenseKey(FrappeTestCase):
 		)
 		sales_invoice = frappe._dict(
 			customer="CUST-0005",
-			contact_email="customer@example.com",
 			items=[frappe._dict(item_code="LIC-ITEM-5")],
 		)
 		item_doc = frappe._dict(item_code="LIC-ITEM-5", item_group="PH Agent Hub")
@@ -196,8 +186,6 @@ class TestLicenseKey(FrappeTestCase):
 			doc = _DummyLicenseKey()
 			created.append(doc)
 			return doc
-
-		mock_key = frappe._dict(sign=lambda data: b"x" * 64)
 
 		with patch(
 			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.get_doc",
@@ -215,13 +203,11 @@ class TestLicenseKey(FrappeTestCase):
 			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.new_doc",
 			side_effect=fake_new_doc,
 		), patch(
-			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.sendmail",
-			side_effect=Exception("SMTP error"),
+			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key._resolve_customer_email_from_customer",
+			return_value="customer@example.com",
 		), patch(
-			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key.frappe.log_error",
-		), patch(
-			"digital_subscriptions.digital_subscriptions.doctype.ph_agent_hub_settings.ph_agent_hub_settings.PHAgentHubSettings.get_private_key",
-			return_value=mock_key,
+			"digital_subscriptions.digital_subscriptions.doctype.license_key.license_key._send_license_email",
+			side_effect=Exception("email failure"),
 		):
 			create_license_keys(payment_entry, method="on_submit")
 

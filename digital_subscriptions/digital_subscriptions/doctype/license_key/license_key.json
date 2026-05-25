@@ -9,7 +9,6 @@
  "engine": "InnoDB",
  "field_order": [
   "customer",
-  "customer_email",
   "item",
   "payment_entry",
   "reference_doctype",
@@ -29,14 +28,6 @@
    "label": "Customer",
    "options": "Customer",
    "reqd": 1
-  },
-  {
-   "fieldname": "customer_email",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Customer Email",
-   "reqd": 1,
-   "options": "Email"
   },
   {
    "fieldname": "item",
@@ -79,9 +70,7 @@
   {
    "fieldname": "license_key",
    "fieldtype": "Small Text",
-   "label": "License Key",
-   "read_only": 1,
-   "reqd": 1
+   "label": "License Key"
   },
   {
    "default": "-1",
@@ -94,15 +83,13 @@
    "fieldname": "expiry_date",
    "fieldtype": "Datetime",
    "in_list_view": 1,
-   "label": "Expiry Date",
-   "reqd": 1
+   "label": "Expiry Date"
   },
   {
    "fieldname": "issued_on",
    "fieldtype": "Datetime",
    "in_list_view": 1,
-   "label": "Issued On",
-   "reqd": 1
+   "label": "Issued On"
   }
  ],
  "links": [],

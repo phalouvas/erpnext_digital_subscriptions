@@ -15,20 +15,34 @@ from digital_subscriptions.digital_subscriptions.doctype.ph_agent_hub_settings.p
 
 class LicenseKey(Document):
 	def validate(self):
-		"""Auto-generate the license key if not already set and settings are configured."""
+		"""Auto-fill dates and generate the license key if not already set."""
+
+		# Always auto-fill issued_on if not set
+		if not self.issued_on:
+			self.issued_on = frappe.utils.now_datetime()
+
+		# Auto-fill expiry_date if not set
+		if not self.expiry_date:
+			settings = frappe.get_single("PH Agent Hub Settings")
+			days = settings.get("license_duration_days", 365)
+			self.expiry_date = frappe.utils.add_days(self.issued_on, days)
+
 		if self.license_key:
 			return
 
 		settings = frappe.get_single("PH Agent Hub Settings")
-		if not settings.get("enabled") or not settings.get("private_key"):
+		if not settings.get("private_key"):
 			return
+
+		# Resolve the licensee email from the Customer for signing
+		sub = _resolve_customer_email_from_customer(self.customer) or self.customer
 
 		private_key = PHAgentHubSettings.get_private_key()
 		expiry_days = settings.get("license_duration_days", 365)
 
 		license_key_str = _generate_license_key(
 			private_key=private_key,
-			sub=self.customer_email,
+			sub=sub,
 			max_tenants=self.max_tenants,
 			expiry_days=expiry_days,
 		)
@@ -38,16 +52,12 @@ class LicenseKey(Document):
 		payload = _decode_payload(license_key_str)
 		if payload:
 			self.max_tenants = payload.get("max_tenants", -1)
-			self.expiry_date = payload.get("exp")
-			self.issued_on = payload.get("iat")
 
 
 def create_license_keys(doc, method=None, status=None):
-	"""Create License Keys for license items when a Payment Entry is submitted.
+	"""Create License Key docs for license items when a Payment Entry is submitted.
 
-	Follows the same pattern as `create_file_subscription` in `file_subscription.py`.
-	Items belonging to the configured License Item Group in PH Agent Hub Settings
-	trigger automatic Ed25519-signed license key generation.
+	Creates a shell doc — ``validate()`` handles date auto-fill and key generation.
 	"""
 	if doc.doctype != "Payment Entry" or method != "on_submit" or doc.payment_type != "Receive":
 		return
@@ -86,56 +96,29 @@ def create_license_keys(doc, method=None, status=None):
 			if existing:
 				continue
 
-			# Resolve customer email
-			customer_email = _resolve_customer_email(doc_ref)
-
-			# Build and sign the license payload
-			private_key = PHAgentHubSettings.get_private_key()
-			license_key_str = _generate_license_key(
-				private_key=private_key,
-				sub=customer_email,
-				max_tenants=-1,
-				expiry_days=settings.get("license_duration_days", 365),
-			)
-
-			# Parse payload back for audit fields
-			payload = _decode_payload(license_key_str)
-
-			# Create License Key document
+			# Create a shell doc — validate() fills dates + generates the key
 			license_doc = frappe.new_doc("License Key")
 			license_doc.customer = doc_ref.customer
-			license_doc.customer_email = customer_email
 			license_doc.item = item.item_code
 			license_doc.payment_entry = doc.name
 			license_doc.reference_doctype = doc_type
 			license_doc.reference_name = doc_name
-			license_doc.license_key = license_key_str
-			license_doc.max_tenants = payload.get("max_tenants", -1)
-			license_doc.expiry_date = payload.get("exp")
-			license_doc.issued_on = payload.get("iat")
+			license_doc.max_tenants = -1
 			license_doc.flags.ignore_permissions = True
 			license_doc.save(ignore_permissions=True)
 
-			# Send email — wrapped in try/except to prevent payment flow failures
+			# Send email after save (key is now populated by validate())
+			customer_email = _resolve_customer_email_from_customer(doc_ref.customer) or doc_ref.customer
 			_send_license_email(license_doc, customer_email)
 
 
-def _resolve_customer_email(doc_ref):
-	"""Resolve the customer email from a Sales Invoice, Sales Order, etc."""
-	customer_email = doc_ref.get("contact_email")
-	if customer_email:
-		return customer_email
+def _resolve_customer_email_from_customer(customer_name):
+	"""Resolve customer email from the Customer's primary contact."""
+	primary_contact = frappe.get_value("Customer", customer_name, "customer_primary_contact")
+	if not primary_contact:
+		return None
 
-	# Fallback: try to get primary contact email
-	customer_name = doc_ref.get("customer")
-	if customer_name:
-		primary_contact = frappe.get_value("Customer", customer_name, "customer_primary_contact")
-		if primary_contact:
-			contact_email = frappe.get_value("Contact", primary_contact, "email_id")
-			if contact_email:
-				return contact_email
-
-	return customer_name or "unknown@example.com"
+	return frappe.get_value("Contact", primary_contact, "email_id")
 
 
 def _generate_license_key(private_key, sub, max_tenants=-1, expiry_days=365):
