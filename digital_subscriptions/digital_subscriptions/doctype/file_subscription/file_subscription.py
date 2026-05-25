@@ -45,7 +45,8 @@ def create_file_subscription(doc, method=None, status=None):
 				subscription.item = item.item_code
 				subscription.payment_entry = doc.name
 				subscription.starts_on = frappe.utils.now_datetime()
-				subscription.ends_on = frappe.utils.add_days(subscription.starts_on, 365)
+				file_settings = frappe.get_single("File Settings")
+				subscription.ends_on = frappe.utils.add_days(subscription.starts_on, file_settings.get("days", 365))
 				subscription.flags.ignore_permissions = True
 				subscription.save(ignore_permissions=True)
 

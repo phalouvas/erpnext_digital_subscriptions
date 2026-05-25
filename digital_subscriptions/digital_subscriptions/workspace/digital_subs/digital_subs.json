@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"hfp9z4W9Py\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">SP Digital Subscriptions</span>\",\"col\":12}},{\"id\":\"spVZ9kPMiA\",\"type\":\"card\",\"data\":{\"card_name\":\"File Management\",\"col\":4}},{\"id\":\"VH6tIiK4XE\",\"type\":\"paragraph\",\"data\":{\"text\":\"https://kainotomo.com/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.xml?dlid=&lt;FILE_SUBSCRIPTION_NAME&gt;<br>\",\"col\":12}}]",
+ "content": "[{\"id\":\"hfp9z4W9Py\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">SP Digital Subscriptions</span>\",\"col\":12}},{\"id\":\"spVZ9kPMiA\",\"type\":\"card\",\"data\":{\"card_name\":\"File Management\",\"col\":4}},{\"id\":\"licMgmt\",\"type\":\"card\",\"data\":{\"card_name\":\"License Management\",\"col\":4}},{\"id\":\"VH6tIiK4XE\",\"type\":\"paragraph\",\"data\":{\"text\":\"https://kainotomo.com/api/method/digital_subscriptions.digital_subscriptions.doctype.file_version.file_version.xml?dlid=&lt;FILE_SUBSCRIPTION_NAME&gt;<br>\",\"col\":12}}]",
  "creation": "2024-02-09 06:33:37.188324",
  "custom_blocks": [],
  "docstatus": 0,
@@ -48,6 +48,35 @@
    "label": "File Settings",
    "link_count": 0,
    "link_to": "File Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "License Management",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "License Key",
+   "link_count": 0,
+   "link_to": "License Key",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "PH Agent Hub Settings",
+   "link_count": 0,
+   "link_to": "PH Agent Hub Settings",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"

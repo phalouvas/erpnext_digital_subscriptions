@@ -1,0 +1,89 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-25 10:00:00.000000",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "license_item_group",
+  "sb_security",
+  "private_key",
+  "public_key_display",
+  "sb_duration",
+  "license_duration_days"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enable Automatic License Generation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "license_item_group",
+   "fieldtype": "Link",
+   "label": "License Item Group",
+   "options": "Item Group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sb_security",
+   "fieldtype": "Section Break",
+   "label": "Security"
+  },
+  {
+   "fieldname": "private_key",
+   "fieldtype": "Password",
+   "label": "Ed25519 Private Key",
+   "reqd": 1,
+   "description": "PEM format (-----BEGIN PRIVATE KEY-----) or raw base64-encoded 32-byte seed. Used to sign license keys."
+  },
+  {
+   "fieldname": "public_key_display",
+   "fieldtype": "Data",
+   "label": "Public Key",
+   "read_only": 1,
+   "description": "Derived from the private key. Set this as LICENSE_PUBLIC_KEY in PH Agent Hub."
+  },
+  {
+   "fieldname": "sb_duration",
+   "fieldtype": "Section Break",
+   "label": "License Duration"
+  },
+  {
+   "default": "365",
+   "fieldname": "license_duration_days",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "License Duration (Days)",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-05-25 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Digital Subscriptions",
+ "name": "PH Agent Hub Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
